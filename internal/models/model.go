@@ -3,6 +3,7 @@ package models
 import (
 	"database/sql"
 	"errors"
+	_ "github.com/lib/pq"
 )
 
 var (

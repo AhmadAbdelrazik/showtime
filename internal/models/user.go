@@ -6,22 +6,16 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
 	ID        int       `json:"id"`
 	Username  string    `json:"username"`
-	Name      string    `json:"name"`
 	Email     string    `json:"email"`
-	Hash      []byte    `json:"-"`
+	Name      string    `json:"name"`
+	Password  *Password `json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (u *User) ValidatePassword(password string) bool {
-	return bcrypt.CompareHashAndPassword(u.Hash, []byte(password)) == nil
 }
 
 type UserModel struct {
@@ -31,7 +25,7 @@ type UserModel struct {
 func (m *UserModel) Create(u *User) error {
 	query := `INSERT INTO users(username, name, email, hash) VALUES ($1, $2, $3, $4)
 	RETURNING id, created_at`
-	args := []any{u.Username, u.Name, u.Email, u.Hash}
+	args := []any{u.Username, u.Name, u.Email, u.Password.hash}
 
 	row := m.db.QueryRow(query, args...)
 	err := row.Scan(&u.ID, &u.CreatedAt)
@@ -61,7 +55,7 @@ func (m *UserModel) FindByID(id int) (*User, error) {
 		&user.Username,
 		&user.Name,
 		&user.Email,
-		&user.Hash,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 
@@ -90,7 +84,7 @@ func (m *UserModel) FindByUsername(username string) (*User, error) {
 		&user.ID,
 		&user.Name,
 		&user.Email,
-		&user.Hash,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 
@@ -119,7 +113,7 @@ func (m *UserModel) FindByEmail(email string) (*User, error) {
 		&user.ID,
 		&user.Name,
 		&user.Username,
-		&user.Hash,
+		&user.Password.hash,
 		&user.CreatedAt,
 	)
 
