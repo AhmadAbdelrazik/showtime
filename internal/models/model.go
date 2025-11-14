@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrDuplicateKey = errors.New("duplicate key")
+	ErrDuplicateKey = errors.New("duplicate")
 	ErrNotFound     = errors.New("not found")
 )
 

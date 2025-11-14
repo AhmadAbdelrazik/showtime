@@ -24,7 +24,7 @@ type UserModel struct {
 
 func (m *UserModel) Create(u *User) error {
 	query := `INSERT INTO users(username, name, email, hash) VALUES ($1, $2, $3, $4)
-	RETURNING id, created_at`
+	RETURNING id, created_at, updated_at`
 	args := []any{u.Username, u.Name, u.Email, u.Password.hash}
 
 	row := m.db.QueryRow(query, args...)
@@ -32,8 +32,10 @@ func (m *UserModel) Create(u *User) error {
 
 	if err != nil {
 		switch {
-		case strings.Contains(err.Error(), "duplicate"):
-			return fmt.Errorf("%w: user with this username already exists", ErrDuplicateKey)
+		case strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_username_key"`):
+			return fmt.Errorf("%w: user with this username already exists", ErrDuplicate)
+		case strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_email_key"`):
+			return fmt.Errorf("%w: user with this email already exists", ErrDuplicate)
 		default:
 			return err
 		}
