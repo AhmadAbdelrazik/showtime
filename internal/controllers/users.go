@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Controller) PostUserSignupHandler(c *gin.Context) {
+func (h *Application) PostUserSignupHandler(c *gin.Context) {
 	// Input handling
 	var input SignupInput
 
@@ -100,7 +100,7 @@ func (i SignupInput) Validate(v *validator.Validator) {
 	)
 }
 
-func (h *Controller) PostUserLoginHandler(c *gin.Context) {
+func (h *Application) PostUserLoginHandler(c *gin.Context) {
 	// Input handling
 	var input LoginInput
 
