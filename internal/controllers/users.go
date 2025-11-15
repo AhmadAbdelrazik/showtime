@@ -169,3 +169,21 @@ func (i LoginInput) Validate(v *validator.Validator) {
 		"must contain at least 1 lowercase, 1 uppercase, 1 digit, and 1 special character",
 	)
 }
+
+func (h *Application) PostUserLogoutHandler(c *gin.Context) {
+	// session cookie
+	cookie := &http.Cookie{
+		Name:     "SESSION_ID",
+		Value:    "",
+		Path:     "/",
+		MaxAge:   -1,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(c.Writer, cookie)
+
+	// Server Response
+	c.JSON(http.StatusOK, gin.H{})
+}
