@@ -2,12 +2,12 @@ package controllers
 
 import (
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
-	"github.com/go-playground/validator/v10"
+	"github.com/AhmadAbdelrazik/showtime/pkg/cache"
 )
 
 type Controller struct {
 	models *models.Model
-	v      *validator.Validate
+	cache  *cache.Cache
 }
 
 func New(dsn string) (*Controller, error) {
@@ -18,6 +18,6 @@ func New(dsn string) (*Controller, error) {
 
 	return &Controller{
 		models: model,
-		v:      validator.New(validator.WithRequiredStructEnabled()),
+		cache:  cache.New(),
 	}, nil
 }

@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	ErrDuplicateKey = errors.New("duplicate")
-	ErrNotFound     = errors.New("not found")
+	ErrDuplicate = errors.New("duplicate")
+	ErrNotFound  = errors.New("not found")
 )
 
 type Model struct {
