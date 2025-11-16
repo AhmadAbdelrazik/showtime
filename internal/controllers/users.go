@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -53,6 +55,12 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 		}
 		return
 	}
+	slog.Info(
+		"user has been created successfully",
+		"username", user.Username,
+		"id", user.ID,
+		"email", user.Email,
+	)
 
 	sessionID := h.generateRandomString()
 	h.cache.Set(sessionID, fmt.Sprint(user.ID))
@@ -151,7 +159,6 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 	}
 
 	sessionID := h.generateRandomString()
-	fmt.Printf("sessionID: %v\n", sessionID)
 	h.cache.Set(sessionID, fmt.Sprint(user.ID))
 
 	// session cookie
@@ -222,7 +229,9 @@ func (h *Application) userLogoutHandler(c *gin.Context) {
 }
 
 func (a *Application) UserDetailsHandler(c *gin.Context) {
+	slog.Debug("retreiving user model from the request key-value")
 	user := c.MustGet("user").(*models.User)
+	slog.Debug("retreived successfully")
 
 	var output struct {
 		ID        int       `json:"id"`
@@ -233,6 +242,7 @@ func (a *Application) UserDetailsHandler(c *gin.Context) {
 		UpdatedAt time.Time `json:"updated_at"`
 	}
 
+	output.ID = user.ID
 	output.Email = user.Email
 	output.Username = user.Username
 	output.Name = user.Name
