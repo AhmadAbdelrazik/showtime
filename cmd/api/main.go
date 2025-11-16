@@ -11,20 +11,24 @@ import (
 )
 
 func main() {
-	loggerOpts := &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+	// load .env
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("failed to load .env file")
+		os.Exit(1)
+	}
+
+	// setup structured logging (slog)
+	loggerOpts := &slog.HandlerOptions{}
+	if os.Getenv("ENVIRONMENT") == "DEVELOPMENT" || os.Getenv("ENVIRONMENT") == "TESTING" {
+		loggerOpts.Level = slog.LevelDebug
+	} else {
+		loggerOpts.Level = slog.LevelInfo
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
 	slog.SetDefault(logger)
 
-	slog.Debug("loading .env file")
-	if err := godotenv.Load(); err != nil {
-		slog.Error("failed to load .env file")
-		os.Exit(1)
-	}
-	slog.Debug("loaded successfully")
-
+	// Initialize controllers with dsn for Models
 	app, err := controllers.New(os.Getenv("DB_DSN"))
 	if err != nil {
 		log.Fatal("Error Loading Controller" + err.Error())
