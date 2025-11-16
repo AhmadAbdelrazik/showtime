@@ -28,7 +28,7 @@ func (m *UserModel) Create(u *User) error {
 	args := []any{u.Username, u.Name, u.Email, u.Password.hash}
 
 	row := m.db.QueryRow(query, args...)
-	err := row.Scan(&u.ID, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.CreatedAt, &u.UpdatedAt)
 
 	if err != nil {
 		switch {
@@ -44,12 +44,13 @@ func (m *UserModel) Create(u *User) error {
 	return nil
 }
 
-func (m *UserModel) FindByID(id int) (*User, error) {
+func (m *UserModel) Find(id int) (*User, error) {
 	query := `SELECT username, name, email, hash, created_at,
 	updated_at FROM users WHERE id = $1`
 
 	user := &User{
-		ID: id,
+		ID:       id,
+		Password: &Password{},
 	}
 
 	row := m.db.QueryRow(query, id)
@@ -59,6 +60,7 @@ func (m *UserModel) FindByID(id int) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -79,6 +81,7 @@ func (m *UserModel) FindByUsername(username string) (*User, error) {
 
 	user := &User{
 		Username: username,
+		Password: &Password{},
 	}
 
 	row := m.db.QueryRow(query, username)
@@ -88,6 +91,7 @@ func (m *UserModel) FindByUsername(username string) (*User, error) {
 		&user.Email,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -107,7 +111,8 @@ func (m *UserModel) FindByEmail(email string) (*User, error) {
 	updated_at FROM users WHERE email = $1`
 
 	user := &User{
-		Email: email,
+		Email:    email,
+		Password: &Password{},
 	}
 
 	row := m.db.QueryRow(query, email)
@@ -117,6 +122,7 @@ func (m *UserModel) FindByEmail(email string) (*User, error) {
 		&user.Username,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {
