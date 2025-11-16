@@ -11,7 +11,9 @@ func New() *Validator {
 }
 
 func (v *Validator) AddError(key, value string) {
-	v.Errors[key] = value
+	if _, ok := v.Errors[key]; !ok {
+		v.Errors[key] = value
+	}
 }
 
 // Check if condition is true. If false add an error
