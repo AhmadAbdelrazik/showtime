@@ -32,12 +32,11 @@ func New() *Cache {
 
 func (c *Cache) Get(key string) string {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	data, ok := c.data[key]
 	if !ok {
 		return ""
 	}
+	c.mu.RUnlock()
 
 	c.mu.Lock()
 	data.lastCheck = time.Now()
