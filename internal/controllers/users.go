@@ -2,21 +2,23 @@ package controllers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
 
-func (h *Application) PostUserSignupHandler(c *gin.Context) {
+func (h *Application) userSignupHandler(c *gin.Context) {
 	// Input handling
 	var input SignupInput
 
 	if err := c.ShouldBind(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+		v := validator.New()
+		input.Validate(v)
+		c.JSON(http.StatusBadRequest, v.Errors)
 		return
 	}
 
@@ -34,7 +36,7 @@ func (h *Application) PostUserSignupHandler(c *gin.Context) {
 
 	password, err := models.NewPassword(input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, nil)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "something went wrong"})
 		return
 	}
 
@@ -47,7 +49,7 @@ func (h *Application) PostUserSignupHandler(c *gin.Context) {
 		case errors.Is(err, models.ErrDuplicate):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
-			c.JSON(http.StatusInternalServerError, nil)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "something went wrong"})
 		}
 		return
 	}
@@ -70,7 +72,7 @@ func (h *Application) PostUserSignupHandler(c *gin.Context) {
 
 	// Server Response
 
-	c.JSON(http.StatusCreated, gin.H{})
+	c.JSON(http.StatusCreated, gin.H{"success": "account created successfully"})
 }
 
 type SignupInput struct {
@@ -94,18 +96,35 @@ func (i SignupInput) Validate(v *validator.Validator) {
 	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
 	v.Check(len(i.Password) <= 50, "password", "must be at most 50 characters")
 	v.Check(
-		validator.PasswordRX.MatchString(i.Password),
+		validator.LowerRX.MatchString(i.Password),
 		"password",
-		"must contain at least 1 lowercase, 1 uppercase, 1 digit, and 1 special character",
+		"must contain at least 1 lowercase character",
+	)
+	v.Check(
+		validator.UpperRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 uppercase character",
+	)
+	v.Check(
+		validator.NumberRX.MatchString(i.Password),
+		"password",
+		"must contain at least a number",
+	)
+	v.Check(
+		validator.SpecialRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 special character ( !@#$%&* )",
 	)
 }
 
-func (h *Application) PostUserLoginHandler(c *gin.Context) {
+func (h *Application) userLoginHandler(c *gin.Context) {
 	// Input handling
 	var input LoginInput
 
 	if err := c.ShouldBind(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{})
+		v := validator.New()
+		input.Validate(v)
+		c.JSON(http.StatusBadRequest, v.Errors)
 		return
 	}
 
@@ -121,7 +140,7 @@ func (h *Application) PostUserLoginHandler(c *gin.Context) {
 		case errors.Is(err, models.ErrNotFound):
 			c.JSON(http.StatusForbidden, gin.H{"error": "invalid email or password"})
 		default:
-			c.JSON(http.StatusInternalServerError, nil)
+			c.JSON(http.StatusInternalServerError, gin.H{})
 		}
 		return
 	}
@@ -132,6 +151,7 @@ func (h *Application) PostUserLoginHandler(c *gin.Context) {
 	}
 
 	sessionID := h.generateRandomString()
+	fmt.Printf("sessionID: %v\n", sessionID)
 	h.cache.Set(sessionID, fmt.Sprint(user.ID))
 
 	// session cookie
@@ -141,7 +161,6 @@ func (h *Application) PostUserLoginHandler(c *gin.Context) {
 		Path:     "/",
 		MaxAge:   3600,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
 		HttpOnly: true,
 	}
 
@@ -164,13 +183,28 @@ func (i LoginInput) Validate(v *validator.Validator) {
 	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
 	v.Check(len(i.Password) <= 50, "password", "must be at most 50 characters")
 	v.Check(
-		validator.PasswordRX.MatchString(i.Password),
+		validator.LowerRX.MatchString(i.Password),
 		"password",
-		"must contain at least 1 lowercase, 1 uppercase, 1 digit, and 1 special character",
+		"must contain at least 1 lowercase character",
+	)
+	v.Check(
+		validator.UpperRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 uppercase character",
+	)
+	v.Check(
+		validator.NumberRX.MatchString(i.Password),
+		"password",
+		"must contain at least a number",
+	)
+	v.Check(
+		validator.SpecialRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 special character ( !@#$%&* )",
 	)
 }
 
-func (h *Application) PostUserLogoutHandler(c *gin.Context) {
+func (h *Application) userLogoutHandler(c *gin.Context) {
 	// session cookie
 	cookie := &http.Cookie{
 		Name:     "SESSION_ID",
@@ -178,7 +212,6 @@ func (h *Application) PostUserLogoutHandler(c *gin.Context) {
 		Path:     "/",
 		MaxAge:   -1,
 		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
 		HttpOnly: true,
 	}
 
@@ -186,4 +219,25 @@ func (h *Application) PostUserLogoutHandler(c *gin.Context) {
 
 	// Server Response
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+func (a *Application) UserDetailsHandler(c *gin.Context) {
+	user := c.MustGet("user").(*models.User)
+
+	var output struct {
+		ID        int       `json:"id"`
+		Username  string    `json:"username"`
+		Email     string    `json:"email"`
+		Name      string    `json:"name"`
+		CreatedAt time.Time `json:"created_at"`
+		UpdatedAt time.Time `json:"updated_at"`
+	}
+
+	output.Email = user.Email
+	output.Username = user.Username
+	output.Name = user.Name
+	output.CreatedAt = user.CreatedAt
+	output.UpdatedAt = user.UpdatedAt
+
+	c.JSON(http.StatusOK, gin.H{"user": output})
 }
