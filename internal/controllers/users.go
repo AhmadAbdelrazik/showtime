@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 
+	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	"github.com/gin-gonic/gin"
@@ -20,13 +20,13 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 	if err := c.ShouldBind(&input); err != nil {
 		v := validator.New()
 		input.Validate(v)
-		c.JSON(http.StatusBadRequest, v.Errors)
+		httputil.NewValidationError(c, v.Errors)
 		return
 	}
 
 	v := validator.New()
 	if input.Validate(v); !v.Valid() {
-		c.JSON(http.StatusBadRequest, v.Errors)
+		httputil.NewValidationError(c, v.Errors)
 		return
 	}
 
@@ -38,7 +38,7 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 
 	password, err := models.NewPassword(input.Password)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "something went wrong"})
+		httputil.NewError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -49,9 +49,9 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 	if err := h.models.Users.Create(user); err != nil {
 		switch {
 		case errors.Is(err, models.ErrDuplicate):
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			httputil.NewError(c, http.StatusConflict, err)
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "something went wrong"})
+			httputil.NewError(c, http.StatusInternalServerError, err)
 		}
 		return
 	}
@@ -80,7 +80,10 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 
 	// Server Response
 
-	c.JSON(http.StatusCreated, gin.H{"success": "account created successfully"})
+	c.JSON(http.StatusCreated, SignupResponse{
+		Message: "Created successfully",
+		User:    *user,
+	})
 }
 
 type SignupInput struct {
@@ -88,6 +91,11 @@ type SignupInput struct {
 	Email    string `json:"email"`
 	Name     string `json:"name"`
 	Password string `json:"password"`
+}
+
+type SignupResponse struct {
+	Message string      `json:"message"`
+	User    models.User `json:"user"`
 }
 
 func (i SignupInput) Validate(v *validator.Validator) {
@@ -132,13 +140,13 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 	if err := c.ShouldBind(&input); err != nil {
 		v := validator.New()
 		input.Validate(v)
-		c.JSON(http.StatusBadRequest, v.Errors)
+		httputil.NewValidationError(c, v.Errors)
 		return
 	}
 
 	v := validator.New()
 	if input.Validate(v); !v.Valid() {
-		c.JSON(http.StatusBadRequest, v.Errors)
+		httputil.NewValidationError(c, v.Errors)
 		return
 	}
 
@@ -146,15 +154,15 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
-			c.JSON(http.StatusForbidden, gin.H{"error": "invalid email or password"})
+			httputil.NewError(c, http.StatusForbidden, err)
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{})
+			httputil.NewError(c, http.StatusInternalServerError, err)
 		}
 		return
 	}
 
 	if match := user.Password.ComparePassword(input.Password); !match {
-		c.JSON(http.StatusForbidden, gin.H{"error": "invalid email or password"})
+		httputil.NewError(c, http.StatusForbidden, err)
 		return
 	}
 
@@ -174,12 +182,16 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 	http.SetCookie(c.Writer, cookie)
 
 	// Server Response
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, LoginResponse{"logged in successfully"})
 }
 
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Message string `json:"message"`
 }
 
 func (i LoginInput) Validate(v *validator.Validator) {
@@ -225,7 +237,7 @@ func (h *Application) userLogoutHandler(c *gin.Context) {
 	http.SetCookie(c.Writer, cookie)
 
 	// Server Response
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, LogoutResponse{"Logged out successfully"})
 }
 
 func (a *Application) UserDetailsHandler(c *gin.Context) {
@@ -233,21 +245,5 @@ func (a *Application) UserDetailsHandler(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 	slog.Debug("retreived successfully")
 
-	var output struct {
-		ID        int       `json:"id"`
-		Username  string    `json:"username"`
-		Email     string    `json:"email"`
-		Name      string    `json:"name"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-	}
-
-	output.ID = user.ID
-	output.Email = user.Email
-	output.Username = user.Username
-	output.Name = user.Name
-	output.CreatedAt = user.CreatedAt
-	output.UpdatedAt = user.UpdatedAt
-
-	c.JSON(http.StatusOK, gin.H{"user": output})
+	c.JSON(http.StatusOK, user)
 }

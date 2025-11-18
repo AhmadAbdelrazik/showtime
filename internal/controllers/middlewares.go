@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 	"github.com/gin-gonic/gin"
 )
@@ -17,7 +18,8 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 		value, err := c.Cookie("SESSION_ID")
 		if err != nil {
 			slog.Debug("Cookie was not found with the request")
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"unauthorized": "login credentials needed"})
+			httputil.NewError(c, http.StatusUnauthorized, err)
+			c.Abort()
 			return
 		}
 
@@ -26,7 +28,8 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 		if userID == "" {
 			slog.Debug("Cookie was not found in the cache")
 			c.SetCookie("SESSION_ID", "", -1, "/", "", false, false)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"unauthorized": "login credentials needed"})
+			httputil.NewError(c, http.StatusUnauthorized, err)
+			c.Abort()
 			return
 		}
 
@@ -35,7 +38,8 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 		id, err := strconv.ParseInt(userID, 10, 32)
 		if err != nil {
 			slog.Error("Cache contained a non-integer value for user id", "value", userID)
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"unauthorized": "login credentials needed"})
+			httputil.NewError(c, http.StatusUnauthorized, err)
+			c.Abort()
 			return
 		}
 
@@ -47,10 +51,11 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 			case errors.Is(err, models.ErrNotFound):
 				slog.Debug("Attempting to access a deleted user", "userID", id)
 				c.SetCookie("SESSION_ID", "", -1, "/", "", false, false)
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"unauthorized": "login credentials needed"})
+				httputil.NewError(c, http.StatusUnauthorized, err)
 			default:
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{})
+				httputil.NewError(c, http.StatusInternalServerError, err)
 			}
+			c.Abort()
 			return
 		}
 
