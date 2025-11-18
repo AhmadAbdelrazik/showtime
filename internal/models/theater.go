@@ -7,8 +7,6 @@ import (
 	"log/slog"
 	"strings"
 	"time"
-
-	"github.com/go-playground/locales/ar"
 )
 
 type Theater struct {
@@ -32,7 +30,7 @@ func (m *TheaterModel) Create(theater *Theater) error {
 	updated_at`
 
 	args := []any{
-		theater.Manager.ID,
+		theater.ManagerID,
 		theater.Name,
 		theater.City,
 		theater.Address,
