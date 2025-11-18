@@ -98,53 +98,6 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 	})
 }
 
-type SignupInput struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Name     string `json:"name"`
-	Password string `json:"password"`
-}
-
-type SignupResponse struct {
-	Message string      `json:"message"`
-	User    models.User `json:"user"`
-}
-
-func (i SignupInput) Validate(v *validator.Validator) {
-	v.Check(len(strings.TrimSpace(i.Username)) > 0, "username", "required")
-	v.Check(len(i.Username) <= 50, "username", "must be at most 50 characters")
-
-	v.Check(len(strings.TrimSpace(i.Name)) > 0, "name", "required")
-	v.Check(len(i.Name) <= 50, "name", "must be at most 50 characters")
-
-	v.Check(len(strings.TrimSpace(i.Email)) > 0, "email", "required")
-	v.Check(validator.EmailRX.MatchString(i.Email), "email", "invalid email form")
-
-	v.Check(len(strings.TrimSpace(i.Password)) > 0, "password", "required")
-	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
-	v.Check(len(i.Password) <= 50, "password", "must be at most 50 characters")
-	v.Check(
-		validator.LowerRX.MatchString(i.Password),
-		"password",
-		"must contain at least 1 lowercase character",
-	)
-	v.Check(
-		validator.UpperRX.MatchString(i.Password),
-		"password",
-		"must contain at least 1 uppercase character",
-	)
-	v.Check(
-		validator.NumberRX.MatchString(i.Password),
-		"password",
-		"must contain at least a number",
-	)
-	v.Check(
-		validator.SpecialRX.MatchString(i.Password),
-		"password",
-		"must contain at least 1 special character ( !@#$%&* )",
-	)
-}
-
 // UserLogin godoc
 // @Summary      User Login
 // @Description  Login existing users to their accounts
@@ -209,44 +162,6 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, LoginResponse{"logged in successfully"})
 }
 
-type LoginInput struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	Message string `json:"message"`
-}
-
-func (i LoginInput) Validate(v *validator.Validator) {
-	v.Check(len(strings.TrimSpace(i.Email)) > 0, "email", "required")
-	v.Check(validator.EmailRX.MatchString(i.Email), "email", "invalid email form")
-
-	v.Check(len(strings.TrimSpace(i.Password)) > 0, "password", "required")
-	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
-	v.Check(len(i.Password) <= 50, "password", "must be at most 50 characters")
-	v.Check(
-		validator.LowerRX.MatchString(i.Password),
-		"password",
-		"must contain at least 1 lowercase character",
-	)
-	v.Check(
-		validator.UpperRX.MatchString(i.Password),
-		"password",
-		"must contain at least 1 uppercase character",
-	)
-	v.Check(
-		validator.NumberRX.MatchString(i.Password),
-		"password",
-		"must contain at least a number",
-	)
-	v.Check(
-		validator.SpecialRX.MatchString(i.Password),
-		"password",
-		"must contain at least 1 special character ( !@#$%&* )",
-	)
-}
-
 // UserLogout godoc
 // @Summary      User Logout
 // @Description  Logout users from the system.
@@ -288,4 +203,89 @@ func (a *Application) UserDetailsHandler(c *gin.Context) {
 	slog.Debug("retreived successfully")
 
 	c.JSON(http.StatusOK, user)
+}
+
+type SignupInput struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
+}
+
+type SignupResponse struct {
+	Message string      `json:"message"`
+	User    models.User `json:"user"`
+}
+
+func (i SignupInput) Validate(v *validator.Validator) {
+	v.Check(len(strings.TrimSpace(i.Username)) > 0, "username", "required")
+	v.Check(len(i.Username) <= 50, "username", "must be at most 50 characters")
+
+	v.Check(len(strings.TrimSpace(i.Name)) > 0, "name", "required")
+	v.Check(len(i.Name) <= 50, "name", "must be at most 50 characters")
+
+	v.Check(len(strings.TrimSpace(i.Email)) > 0, "email", "required")
+	v.Check(validator.EmailRX.MatchString(i.Email), "email", "invalid email form")
+
+	v.Check(len(strings.TrimSpace(i.Password)) > 0, "password", "required")
+	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
+	v.Check(len(i.Password) <= 50, "password", "must be at most 50 characters")
+	v.Check(
+		validator.LowerRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 lowercase character",
+	)
+	v.Check(
+		validator.UpperRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 uppercase character",
+	)
+	v.Check(
+		validator.NumberRX.MatchString(i.Password),
+		"password",
+		"must contain at least a number",
+	)
+	v.Check(
+		validator.SpecialRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 special character ( !@#$%&* )",
+	)
+}
+
+type LoginInput struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginResponse struct {
+	Message string `json:"message"`
+}
+
+func (i LoginInput) Validate(v *validator.Validator) {
+	v.Check(len(strings.TrimSpace(i.Email)) > 0, "email", "required")
+	v.Check(validator.EmailRX.MatchString(i.Email), "email", "invalid email form")
+
+	v.Check(len(strings.TrimSpace(i.Password)) > 0, "password", "required")
+	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
+	v.Check(len(i.Password) <= 50, "password", "must be at most 50 characters")
+	v.Check(
+		validator.LowerRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 lowercase character",
+	)
+	v.Check(
+		validator.UpperRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 uppercase character",
+	)
+	v.Check(
+		validator.NumberRX.MatchString(i.Password),
+		"password",
+		"must contain at least a number",
+	)
+	v.Check(
+		validator.SpecialRX.MatchString(i.Password),
+		"password",
+		"must contain at least 1 special character ( !@#$%&* )",
+	)
 }
