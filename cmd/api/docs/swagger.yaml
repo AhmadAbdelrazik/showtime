@@ -1,0 +1,180 @@
+basePath: /api/v1
+definitions:
+  controllers.LoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  controllers.LoginResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  controllers.LogoutResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  controllers.SignupInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  controllers.SignupResponse:
+    properties:
+      message:
+        type: string
+      user:
+        $ref: '#/definitions/models.User'
+    type: object
+  httputil.HTTPError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        example: status bad request
+        type: string
+    type: object
+  httputil.ValidationError:
+    properties:
+      code:
+        example: 400
+        type: integer
+      message:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: ahmadabdelrazik159@gmail.com
+    name: Ahmad Abdelrazik
+    url: https://www.github.com/AhmadAbdelrazik
+  description: API for managing theaters and shows.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Showtime API
+  version: "1.0"
+paths:
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      description: Login existing users to their accounts
+      parameters:
+      - description: User login data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: User Login
+      tags:
+      - auth
+  /api/logout:
+    get:
+      description: Logout users from the system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.LogoutResponse'
+      summary: User Logout
+      tags:
+      - auth
+  /api/signup:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user account
+      parameters:
+      - description: User signup data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.SignupInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.SignupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: User Signup
+      tags:
+      - auth
+  /api/user-info:
+    get:
+      description: Logout users from the system.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+      summary: User Logout
+      tags:
+      - auth
+swagger: "2.0"
