@@ -6,7 +6,7 @@ db-up:
 db-down:
 	@migrate -path=./migrations -database=$(DB_DSN) down
 
-migrations-create:
+db-migration:
 	@migrate create -ext=sql -dir=./migrations $(name)
 
 psql:
