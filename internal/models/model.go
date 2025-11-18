@@ -5,13 +5,18 @@ import (
 	"errors"
 	"log/slog"
 
+	"github.com/Masterminds/squirrel"
+
 	_ "github.com/lib/pq"
 )
 
 var (
-	ErrDuplicate = errors.New("duplicate")
-	ErrNotFound  = errors.New("not found")
+	ErrDuplicate    = errors.New("duplicate")
+	ErrNotFound     = errors.New("not found")
+	ErrEditConflict = errors.New("edit conflict")
 )
+
+var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 type Model struct {
 	Users *UserModel
