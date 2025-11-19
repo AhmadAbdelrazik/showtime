@@ -96,7 +96,7 @@ func (m *TheaterModel) Find(id int) (*Theater, error) {
 	t.updated_at, u.id, u.username, u.email, u.name, u.created_at, u.updated_at
 	FROM theaters AS t 
 	JOIN users AS u ON u.id = t.manager_id
-	WHERE id = $1`
+	WHERE t.id = $1`
 
 	user := &User{}
 	theater := &Theater{ID: id, Manager: user}
@@ -130,7 +130,7 @@ func (m *TheaterModel) Find(id int) (*Theater, error) {
 
 func (m *TheaterModel) Update(theater *Theater) error {
 	query := `UPDATE theaters 
-	SET name = $1, city = $2, address = $3 updated_at = NOW()
+	SET name = $1, city = $2, address = $3, updated_at = NOW()
 	WHERE id = $4 AND updated_at = $5
 	RETURNING updated_at`
 	args := []any{theater.Name, theater.City, theater.Address, theater.ID, theater.UpdatedAt}

@@ -14,17 +14,18 @@ import (
 )
 
 // UserSignup godoc
-// @Summary      User Signup
-// @Description  Registers a new user account
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        input body SignupInput true "User signup data"
-// @Success      200  {object}  SignupResponse
-// @Failure      400  {object}  httputil.ValidationError
-// @Failure      404  {object}  httputil.HTTPError
-// @Failure      500  {object}  httputil.HTTPError
-// @Router       /api/signup [post]
+//
+//	@Summary		User Signup
+//	@Description	Registers a new user account
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		SignupInput	true	"User signup data"
+//	@Success		201		{object}	SignupResponse
+//	@Failure		400		{object}	httputil.ValidationError
+//	@Failure		404		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/api/signup [post]
 func (h *Application) userSignupHandler(c *gin.Context) {
 	// Input handling
 	var input SignupInput
@@ -99,17 +100,18 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 }
 
 // UserLogin godoc
-// @Summary      User Login
-// @Description  Login existing users to their accounts
-// @Tags         auth
-// @Accept       json
-// @Produce      json
-// @Param        input body LoginInput true "User login data"
-// @Success      200  {object}  LoginResponse
-// @Failure      400  {object}  httputil.ValidationError
-// @Failure      403  {object}  httputil.HTTPError
-// @Failure      500  {object}  httputil.HTTPError
-// @Router       /api/login [post]
+//
+//	@Summary		User Login
+//	@Description	Login existing users to their accounts
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		LoginInput	true	"User login data"
+//	@Success		200		{object}	LoginResponse
+//	@Failure		400		{object}	httputil.ValidationError
+//	@Failure		403		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/api/login [post]
 func (h *Application) userLoginHandler(c *gin.Context) {
 	// Input handling
 	var input LoginInput
@@ -163,12 +165,13 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 }
 
 // UserLogout godoc
-// @Summary      User Logout
-// @Description  Logout users from the system.
-// @Tags         auth
-// @Produce      json
-// @Success      200  {object}  LogoutResponse
-// @Router       /api/logout [get]
+//
+//	@Summary		User Logout
+//	@Description	Logout users from the system.
+//	@Tags			auth
+//	@Produce		json
+//	@Success		200	{object}	LogoutResponse
+//	@Router			/api/logout [get]
 func (h *Application) userLogoutHandler(c *gin.Context) {
 	// session cookie
 	cookie := &http.Cookie{
@@ -191,12 +194,13 @@ type LogoutResponse struct {
 }
 
 // UserLogout godoc
-// @Summary      User Logout
-// @Description  Logout users from the system.
-// @Tags         auth
-// @Produce      json
-// @Success      200  {object}  models.User
-// @Router       /api/user-info [get]
+//
+//	@Summary		User Logout
+//	@Description	Logout users from the system.
+//	@Tags			auth
+//	@Produce		json
+//	@Success		200	{object}	models.User
+//	@Router			/api/user-info [get]
 func (a *Application) UserDetailsHandler(c *gin.Context) {
 	slog.Debug("retreiving user model from the request key-value")
 	user := c.MustGet("user").(*models.User)

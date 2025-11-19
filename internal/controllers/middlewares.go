@@ -28,7 +28,7 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 		if userID == "" {
 			slog.Debug("Cookie was not found in the cache")
 			c.SetCookie("SESSION_ID", "", -1, "/", "", false, false)
-			httputil.NewError(c, http.StatusUnauthorized, err)
+			httputil.NewError(c, http.StatusUnauthorized, errors.New("unauthorized"))
 			c.Abort()
 			return
 		}

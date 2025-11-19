@@ -1,5 +1,26 @@
 basePath: /api/v1
 definitions:
+  controllers.CreateTheaterInput:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      name:
+        type: string
+    type: object
+  controllers.CreateTheaterResponse:
+    properties:
+      message:
+        type: string
+      theater:
+        $ref: '#/definitions/models.Theater'
+    type: object
+  controllers.DeleteTheaterResponse:
+    properties:
+      message:
+        type: string
+    type: object
   controllers.LoginInput:
     properties:
       email:
@@ -35,6 +56,29 @@ definitions:
       user:
         $ref: '#/definitions/models.User'
     type: object
+  controllers.TheaterSearchResponse:
+    properties:
+      theaters:
+        items:
+          $ref: '#/definitions/models.Theater'
+        type: array
+    type: object
+  controllers.UpdateTheaterInput:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      name:
+        type: string
+    type: object
+  controllers.UpdateTheaterResponse:
+    properties:
+      message:
+        type: string
+      theater:
+        $ref: '#/definitions/models.Theater'
+    type: object
   httputil.HTTPError:
     properties:
       code:
@@ -53,6 +97,23 @@ definitions:
         additionalProperties:
           type: string
         type: object
+    type: object
+  models.Theater:
+    properties:
+      address:
+        type: string
+      city:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      manager_id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
     type: object
   models.User:
     properties:
@@ -145,8 +206,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/controllers.SignupResponse'
         "400":
@@ -164,6 +225,204 @@ paths:
       summary: User Signup
       tags:
       - auth
+  /api/theaters:
+    get:
+      description: Search theaters based on name or city
+      parameters:
+      - description: theater name
+        in: query
+        name: name
+        type: string
+      - description: theater city
+        in: query
+        name: city
+        type: string
+      - description: sort by city or name
+        in: query
+        name: sort_by
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.TheaterSearchResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Theaters Search
+      tags:
+      - theaters
+    post:
+      consumes:
+      - application/json
+      description: Creates a new theater
+      parameters:
+      - description: new theater data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateTheaterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.CreateTheaterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Create Theater
+      tags:
+      - theaters
+  /api/theaters/{id}:
+    delete:
+      description: Delete Theater by ID
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.DeleteTheaterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Delete Theater
+      tags:
+      - theaters
+    get:
+      description: Get Theater by ID
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Theater'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Get Theater
+      tags:
+      - theaters
+    put:
+      consumes:
+      - application/json
+      description: Update an existing theater
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: updated theater data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateTheaterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.UpdateTheaterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Update Theater
+      tags:
+      - theaters
   /api/user-info:
     get:
       description: Logout users from the system.

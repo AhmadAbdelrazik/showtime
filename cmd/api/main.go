@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/swaggo/files"
-	"github.com/swaggo/gin-swagger"
 	"log"
 	"log/slog"
 	"os"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/controllers"
 	"github.com/gin-gonic/gin"
@@ -14,20 +15,20 @@ import (
 	_ "github.com/AhmadAbdelrazik/showtime/cmd/api/docs"
 )
 
-// @title           Showtime API
-// @version         1.0
-// @description     API for managing theaters and shows.
-// @termsOfService  http://swagger.io/terms/
+//	@title			Showtime API
+//	@version		1.0
+//	@description	API for managing theaters and shows.
+//	@termsOfService	http://swagger.io/terms/
 
-// @contact.name   Ahmad Abdelrazik
-// @contact.url    https://www.github.com/AhmadAbdelrazik
-// @contact.email  ahmadabdelrazik159@gmail.com
+//	@contact.name	Ahmad Abdelrazik
+//	@contact.url	https://www.github.com/AhmadAbdelrazik
+//	@contact.email	ahmadabdelrazik159@gmail.com
 
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8080
-// @BasePath  /api/v1
+// @host		localhost:8080
+// @BasePath	/api/v1
 func main() {
 	// load .env
 	if err := godotenv.Load(); err != nil {
