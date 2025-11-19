@@ -37,6 +37,7 @@ func (m *UserModel) Create(u *User) error {
 		case strings.Contains(err.Error(), `duplicate key value violates unique constraint "users_email_key"`):
 			return fmt.Errorf("%w: user with this email already exists", ErrDuplicate)
 		default:
+			slog.Error("SQL Database Failure", "error", err)
 			return err
 		}
 	}
@@ -68,6 +69,7 @@ func (m *UserModel) Find(id int) (*User, error) {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNotFound
 		default:
+			slog.Error("SQL Database Failure", "error", err)
 			return nil, err
 		}
 	}
@@ -99,6 +101,7 @@ func (m *UserModel) FindByUsername(username string) (*User, error) {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNotFound
 		default:
+			slog.Error("SQL Database Failure", "error", err)
 			return nil, err
 		}
 	}
@@ -130,6 +133,7 @@ func (m *UserModel) FindByEmail(email string) (*User, error) {
 		case errors.Is(err, sql.ErrNoRows):
 			return nil, ErrNotFound
 		default:
+			slog.Error("SQL Database Failure", "error", err)
 			return nil, err
 		}
 	}
