@@ -21,6 +21,7 @@ var psql = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 type Model struct {
 	Users    *UserModel
 	Theaters *TheaterModel
+	Halls    *HallModel
 }
 
 func New(dsn string) (*Model, error) {
@@ -47,5 +48,6 @@ func New(dsn string) (*Model, error) {
 	return &Model{
 		Users:    &UserModel{db},
 		Theaters: &TheaterModel{db},
+		Halls:    &HallModel{db},
 	}, nil
 }

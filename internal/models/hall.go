@@ -147,3 +147,22 @@ func (m *HallModel) Delete(id int) error {
 
 	return nil
 }
+
+func (m *HallModel) DeleteByCode(code string) error {
+	query := `DELETE FROM halls WHERE code = $1`
+
+	result, err := m.db.Exec(query, code)
+	if err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	}
+
+	if rows, err := result.RowsAffected(); err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	} else if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}
