@@ -25,7 +25,8 @@ func NewError(ctx *gin.Context, status int, err error) {
 func NewValidationError(ctx *gin.Context, errors map[string]string) {
 	er := ValidationError{
 		Code:    http.StatusBadRequest,
-		Message: errors,
+		Message: "invalid request body",
+		Errors:  errors,
 	}
 	ctx.JSON(http.StatusBadRequest, er)
 }
@@ -38,5 +39,6 @@ type HTTPError struct {
 
 type ValidationError struct {
 	Code    int               `json:"code" example:"400"`
-	Message map[string]string `json:"message"`
+	Message string            `json:"message"`
+	Errors  map[string]string `json:"errors"`
 }
