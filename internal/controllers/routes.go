@@ -20,6 +20,6 @@ func (a *Application) Routes(r *gin.Engine) {
 	api.GET("/theaters/:id", a.getTheaterHandler)
 
 	auth.POST("/theaters", a.createTheaterHandler)
-	auth.PUT("/theaters/:id", a.updateTheaterHandler)
+	auth.PATCH("/theaters/:id", a.updateTheaterHandler)
 	auth.DELETE("/theaters/:id", a.deleteTheaterHandler)
 }

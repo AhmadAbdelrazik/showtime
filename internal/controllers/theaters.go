@@ -144,7 +144,7 @@ func (h *Application) createTheaterHandler(c *gin.Context) {
 //	@Failure		404		{object}	httputil.HTTPError
 //	@Failure		409		{object}	httputil.HTTPError
 //	@Failure		500		{object}	httputil.HTTPError
-//	@Router			/api/theaters/{id} [put]
+//	@Router			/api/theaters/{id} [patch]
 func (h *Application) updateTheaterHandler(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
@@ -255,7 +255,7 @@ func (h *Application) deleteTheaterHandler(c *gin.Context) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
-			errors.New("theater info can be updated by theater manager only"),
+			errors.New("theater can be deleted by theater manager only"),
 		)
 		return
 	}
