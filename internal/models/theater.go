@@ -250,6 +250,12 @@ func (f *TheaterFilter) Build() (string, []any, error) {
 
 	if f.Limit != nil {
 		q = q.Limit(uint64(*f.Limit))
+	} else {
+		q = q.Limit(20)
+	}
+
+	if f.Offset != nil {
+		q = q.Offset(uint64(*f.Offset))
 	}
 
 	return q.ToSql()
