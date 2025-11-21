@@ -18,6 +18,7 @@ type Theater struct {
 	Address   string    `json:"address"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Halls     []Hall    `json:"halls"`
 }
 
 type TheaterModel struct {
@@ -61,6 +62,7 @@ func (m *TheaterModel) Search(f TheaterFilter) ([]Theater, error) {
 		slog.Error("SQL Database Failure", "error", err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	var theaters []Theater
 	for rows.Next() {
@@ -93,36 +95,82 @@ func (m *TheaterModel) Search(f TheaterFilter) ([]Theater, error) {
 
 func (m *TheaterModel) Find(id int) (*Theater, error) {
 	query := `SELECT t.manager_id, t.name, t.city, t.address, t.created_at,
-	t.updated_at, u.id, u.username, u.email, u.name, u.created_at, u.updated_at
-	FROM theaters AS t 
+	t.updated_at, u.id, u.username, u.email, u.name, u.created_at, u.updated_at,
+	h.id, h.theater_id, h.name, h.code, h.created_at, h.updated_at
+	FROM theaters AS t
 	JOIN users AS u ON u.id = t.manager_id
+	LEFT JOIN halls AS h ON t.id = h.theater_id
 	WHERE t.id = $1`
 
-	user := &User{}
-	theater := &Theater{ID: id, Manager: user}
-	err := m.db.QueryRow(query, id).Scan(
-		&theater.ManagerID,
-		&theater.Name,
-		&theater.City,
-		&theater.Address,
-		&theater.CreatedAt,
-		&theater.UpdatedAt,
-		&user.ID,
-		&user.Username,
-		&user.Email,
-		&user.Name,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
-
+	rows, err := m.db.Query(query, id)
 	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrNotFound
-		default:
-			slog.Error("SQL Database Failure", "error", err)
+		slog.Error("SQL Database Failure", "error", err)
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	theater := &Theater{
+		ID:      id,
+		Manager: &User{},
+		Halls:   []Hall{},
+	}
+
+	type HallDB struct {
+		ID        sql.NullInt32
+		TheaterID sql.NullInt32
+		Name      sql.NullString
+		Code      sql.NullString
+		CreatedAt sql.NullTime
+		UpdatedAt sql.NullTime
+	}
+
+	first := true
+	for rows.Next() {
+		first = false
+		h := HallDB{}
+		var hall Hall
+
+		err := rows.Scan(
+			&theater.ManagerID,
+			&theater.Name,
+			&theater.City,
+			&theater.Address,
+			&theater.CreatedAt,
+			&theater.UpdatedAt,
+			&theater.Manager.ID,
+			&theater.Manager.Username,
+			&theater.Manager.Email,
+			&theater.Manager.Name,
+			&theater.Manager.CreatedAt,
+			&theater.Manager.UpdatedAt,
+			&h.ID,
+			&h.TheaterID,
+			&h.Name,
+			&h.Code,
+			&h.CreatedAt,
+			&h.UpdatedAt,
+		)
+
+		if err != nil {
+			slog.Error("Scan Failure", "error", err)
 			return nil, err
 		}
+
+		if h.ID.Valid {
+			hall.ID = int(h.ID.Int32)
+			hall.TheaterID = int(h.TheaterID.Int32)
+			hall.Name = h.Name.String
+			hall.Code = h.Code.String
+			hall.CreatedAt = h.CreatedAt.Time
+			hall.UpdatedAt = h.UpdatedAt.Time
+
+			theater.Halls = append(theater.Halls, hall)
+		}
+	}
+
+	if first {
+		return nil, ErrNotFound
 	}
 
 	return theater, nil

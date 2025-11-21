@@ -115,6 +115,7 @@ func (h *Application) createTheaterHandler(c *gin.Context) {
 		City:      input.City,
 		Address:   input.Address,
 		ManagerID: user.ID,
+		Halls:     []models.Hall{},
 	}
 
 	if err := h.models.Theaters.Create(theater); err != nil {
