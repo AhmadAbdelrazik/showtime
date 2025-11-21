@@ -303,8 +303,8 @@ func (i *CreateHallInput) Validate(v *validator.Validator) {
 	v.Check(len(i.Name) > 5, "name", "must be at least 5 characters")
 
 	v.Check(len(strings.TrimSpace(i.Code)) > 0, "code", "required")
+	v.Check(validator.AlphanumRX.MatchString(i.Code), "code", "must not contain any spaces or special characters")
 	v.Check(len(i.Code) <= 10, "code", "must be at most 50 characters")
-	v.Check(len(i.Code) > 5, "code", "must be at least 5 characters")
 }
 
 func (i *CreateHallInput) Errors() map[string]string {
