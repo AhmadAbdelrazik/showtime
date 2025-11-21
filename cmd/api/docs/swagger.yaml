@@ -1,5 +1,19 @@
 basePath: /api/v1
 definitions:
+  controllers.CreateHallInput:
+    properties:
+      code:
+        type: string
+      name:
+        type: string
+    type: object
+  controllers.CreateHallResponse:
+    properties:
+      hall:
+        $ref: '#/definitions/models.Hall'
+      message:
+        type: string
+    type: object
   controllers.CreateTheaterInput:
     properties:
       address:
@@ -63,6 +77,18 @@ definitions:
           $ref: '#/definitions/models.Theater'
         type: array
     type: object
+  controllers.UpdateHallInput:
+    properties:
+      name:
+        type: string
+    type: object
+  controllers.UpdateHallResponse:
+    properties:
+      hall:
+        $ref: '#/definitions/models.Hall'
+      message:
+        type: string
+    type: object
   controllers.UpdateTheaterInput:
     properties:
       address:
@@ -93,10 +119,27 @@ definitions:
       code:
         example: 400
         type: integer
-      message:
+      errors:
         additionalProperties:
           type: string
         type: object
+      message:
+        type: string
+    type: object
+  models.Hall:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      theater_id:
+        type: integer
+      updated_at:
+        type: string
     type: object
   models.Theater:
     properties:
@@ -106,6 +149,10 @@ definitions:
         type: string
       created_at:
         type: string
+      halls:
+        items:
+          $ref: '#/definitions/models.Hall'
+        type: array
       id:
         type: integer
       manager_id:
@@ -373,7 +420,7 @@ paths:
       summary: Get Theater
       tags:
       - theaters
-    put:
+    patch:
       consumes:
       - application/json
       description: Update an existing theater
@@ -423,6 +470,170 @@ paths:
       summary: Update Theater
       tags:
       - theaters
+  /api/theaters/{id}/halls:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new theater's hall
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: new hall data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateHallInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.CreateHallResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Create Hall
+      tags:
+      - halls
+  /api/theaters/{id}/halls/{code}:
+    delete:
+      description: Delete theater's hall by Hall Code
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: hall code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.DeleteTheaterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Delete Hall
+      tags:
+      - halls
+    get:
+      description: Get Hall by ID
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: hall code
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Hall'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Get Hall
+      tags:
+      - halls
+    patch:
+      consumes:
+      - application/json
+      description: Updates a new theater's hall
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: new hall data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateHallInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.UpdateHallResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Update Hall
+      tags:
+      - halls
   /api/user-info:
     get:
       description: Logout users from the system.

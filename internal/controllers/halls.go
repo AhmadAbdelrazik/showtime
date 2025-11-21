@@ -16,7 +16,6 @@ import (
 //
 //	@Summary		Get Hall
 //	@Description	Get Hall by ID
-//	@Tags			theaters
 //	@Tags			halls
 //	@Produce		json
 //	@Param			id	path		int	true	"theater id"
@@ -53,7 +52,6 @@ func (h *Application) getHallHandler(c *gin.Context) {
 //
 //	@Summary		Create Hall
 //	@Description	Creates a new theater's hall
-//	@Tags			theaters
 //	@Tags			halls
 //	@Accept			json
 //	@Produce		json
@@ -137,7 +135,6 @@ func (h *Application) createHallHandler(c *gin.Context) {
 //
 //	@Summary		Update Hall
 //	@Description	Updates a new theater's hall
-//	@Tags			theaters
 //	@Tags			halls
 //	@Accept			json
 //	@Produce		json
@@ -232,7 +229,6 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 //
 //	@Summary		Delete Hall
 //	@Description	Delete theater's hall by Hall Code
-//	@Tags			theaters
 //	@Tags			halls
 //	@Produce		json
 //	@Param			id	path		int	true	"theater id"

@@ -314,7 +314,64 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
+            "delete": {
+                "description": "Delete Theater by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "theaters"
+                ],
+                "summary": "Delete Theater",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.DeleteTheaterResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            },
+            "patch": {
                 "description": "Update an existing theater",
                 "consumes": [
                     "application/json"
@@ -388,21 +445,147 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "delete": {
-                "description": "Delete Theater by ID",
+            }
+        },
+        "/api/theaters/{id}/halls": {
+            "post": {
+                "description": "Creates a new theater's hall",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "theaters"
+                    "halls"
                 ],
-                "summary": "Delete Theater",
+                "summary": "Create Hall",
                 "parameters": [
                     {
                         "type": "integer",
                         "description": "theater id",
                         "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new hall data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateHallInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateHallResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.ValidationError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/theaters/{id}/halls/{code}": {
+            "get": {
+                "description": "Get Hall by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "halls"
+                ],
+                "summary": "Get Hall",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "hall code",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Hall"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete theater's hall by Hall Code",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "halls"
+                ],
+                "summary": "Delete Hall",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "hall code",
+                        "name": "code",
                         "in": "path",
                         "required": true
                     }
@@ -445,6 +628,69 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "description": "Updates a new theater's hall",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "halls"
+                ],
+                "summary": "Update Hall",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new hall data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateHallInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.UpdateHallResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.ValidationError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
             }
         },
         "/api/user-info": {
@@ -469,6 +715,28 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controllers.CreateHallInput": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.CreateHallResponse": {
+            "type": "object",
+            "properties": {
+                "hall": {
+                    "$ref": "#/definitions/models.Hall"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.CreateTheaterInput": {
             "type": "object",
             "properties": {
@@ -568,6 +836,25 @@ const docTemplate = `{
                 }
             }
         },
+        "controllers.UpdateHallInput": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.UpdateHallResponse": {
+            "type": "object",
+            "properties": {
+                "hall": {
+                    "$ref": "#/definitions/models.Hall"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.UpdateTheaterInput": {
             "type": "object",
             "properties": {
@@ -613,11 +900,37 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 400
                 },
-                "message": {
+                "errors": {
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Hall": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "theater_id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -632,6 +945,12 @@ const docTemplate = `{
                 },
                 "created_at": {
                     "type": "string"
+                },
+                "halls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Hall"
+                    }
                 },
                 "id": {
                     "type": "integer"
