@@ -7,6 +7,8 @@ import (
 	"log/slog"
 	"strings"
 	"time"
+
+	sq "github.com/Masterminds/squirrel"
 )
 
 type Theater struct {
@@ -225,17 +227,20 @@ type TheaterFilter struct {
 }
 
 func (f *TheaterFilter) Build() (string, []any, error) {
-	q := psql.Select("id, manager_id, name, city, address, created_at, updated_at").From("theaters")
-	counter := 1
+	q := sq.Select("id, manager_id, name, city, address, created_at, updated_at").From("theaters")
 
 	if f.Name != nil {
-		q = q.Where(fmt.Sprintf("to_tsvector('english', name) @@ to_tsquery('english', $%v)", counter))
-		counter++
+		q = q.Where(sq.Expr(
+			"to_tsvector('english', name) @@ plainto_tsquery('english', ?)",
+			*f.Name,
+		))
 	}
 
 	if f.City != nil {
-		q = q.Where(fmt.Sprintf("to_tsvector('english', city) @@ to_tsquery('english', $%v)", counter))
-		counter++
+		q = q.Where(sq.Expr(
+			"to_tsvector('english', city) @@ plainto_tsquery('english', ?)",
+			*f.City,
+		))
 	}
 
 	if f.SortBy != nil {
@@ -258,5 +263,5 @@ func (f *TheaterFilter) Build() (string, []any, error) {
 		q = q.Offset(uint64(*f.Offset))
 	}
 
-	return q.ToSql()
+	return q.PlaceholderFormat(sq.Dollar).ToSql()
 }
