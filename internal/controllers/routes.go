@@ -22,4 +22,11 @@ func (a *Application) Routes(r *gin.Engine) {
 	auth.POST("/theaters", a.createTheaterHandler)
 	auth.PATCH("/theaters/:id", a.updateTheaterHandler)
 	auth.DELETE("/theaters/:id", a.deleteTheaterHandler)
+
+	// halls
+	api.GET("/theaters/:id/halls/:code", a.getHallHandler)
+
+	auth.POST("/theaters/:id/halls", a.createHallHandler)
+	auth.PATCH("/theaters/:id/halls/:code", a.updateHallHandler)
+	auth.DELETE("/theaters/:id/halls/:code", a.deleteHallResponse)
 }

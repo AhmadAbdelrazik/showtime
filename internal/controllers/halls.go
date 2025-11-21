@@ -276,7 +276,12 @@ func (h *Application) deleteHallResponse(c *gin.Context) {
 	}
 
 	if err := h.models.Halls.DeleteByCode(hallCode); err != nil {
-		httputil.NewError(c, http.StatusInternalServerError, err)
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			httputil.NewError(c, http.StatusNotFound, err)
+		default:
+			httputil.NewError(c, http.StatusInternalServerError, err)
+		}
 		return
 	}
 
