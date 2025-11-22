@@ -16,7 +16,7 @@ func (a *Application) Routes(r *gin.Engine) {
 	auth.GET("/user-info", a.UserDetailsHandler)
 
 	// theaters
-	api.GET("/theaters", a.theatersSearchHandler)
+	api.GET("/theaters", a.searchTheatersHandler)
 	api.GET("/theaters/:id", a.getTheaterHandler)
 
 	auth.POST("/theaters", a.createTheaterHandler)

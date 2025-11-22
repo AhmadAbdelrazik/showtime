@@ -18,6 +18,7 @@ type Model struct {
 	Users    *UserModel
 	Theaters *TheaterModel
 	Halls    *HallModel
+	Movies   *MovieModel
 }
 
 func New(dsn string) (*Model, error) {
@@ -45,5 +46,6 @@ func New(dsn string) (*Model, error) {
 		Users:    &UserModel{db},
 		Theaters: &TheaterModel{db},
 		Halls:    &HallModel{db},
+		Movies:   &MovieModel{db},
 	}, nil
 }

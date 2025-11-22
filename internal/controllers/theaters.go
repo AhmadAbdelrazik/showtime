@@ -27,7 +27,7 @@ import (
 //	@Failure		400		{object}	httputil.HTTPError
 //	@Failure		500		{object}	httputil.HTTPError
 //	@Router			/api/theaters [get]
-func (h *Application) theatersSearchHandler(c *gin.Context) {
+func (h *Application) searchTheatersHandler(c *gin.Context) {
 	var filters models.TheaterFilter
 
 	if err := c.ShouldBindQuery(&filters); err != nil {
