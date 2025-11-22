@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	sq "github.com/Masterminds/squirrel"
 )
 
@@ -224,6 +226,26 @@ type TheaterFilter struct {
 	SortBy *string `form:"sort_by"`
 	Limit  *uint   `form:"limit"`
 	Offset *uint   `form:"offset"`
+}
+
+func (f *TheaterFilter) Validate(v *validator.Validator) {
+	if f.SortBy != nil {
+		validSortValues := []string{"name", "-name", "city", "-city"}
+		sort := *f.SortBy
+		v.Check(slices.Contains(validSortValues, sort), "sort", "invalid sort value")
+	}
+
+	if f.Limit != nil {
+		v.Check(*f.Limit <= 100, "limit", "must be at most 100")
+	}
+
+	if f.Name != nil {
+		v.Check(len(*f.Name) <= 50, "name", "must be at most 50 characters")
+	}
+
+	if f.City != nil {
+		v.Check(len(*f.City) <= 30, "city", "must be at most 30 characters")
+	}
 }
 
 func (f *TheaterFilter) Build() (string, []any, error) {

@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
+	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	sq "github.com/Masterminds/squirrel"
 )
 
@@ -181,6 +183,42 @@ type MovieFilter struct {
 	SortBy      *string `form:"sort_by"`
 	Limit       *uint   `form:"limit"`
 	Offset      *uint   `form:"offset"`
+}
+
+func (f *MovieFilter) Validate(v *validator.Validator) {
+	if f.SortBy != nil {
+		validSortValues := []string{
+			"title",
+			"-title",
+			"release_year",
+			"-release_year",
+			"director",
+			"-director",
+		}
+		sort := *f.SortBy
+		v.Check(slices.Contains(validSortValues, sort), "sort", "invalid sort value")
+	}
+
+	if f.Limit != nil {
+		v.Check(*f.Limit <= 100, "limit", "must be at most 100")
+	}
+
+	if f.Title != nil {
+		v.Check(len(*f.Title) <= 100, "title", "must be at most 100 characters")
+	}
+
+	if f.Director != nil {
+		v.Check(len(*f.Director) <= 50, "director", "must be at most 50 characters")
+	}
+
+	if f.ReleaseYear != nil {
+		year := *f.ReleaseYear
+		v.Check(
+			year >= 1900 && year <= time.Now().Year(),
+			"release_year",
+			"must be between 1900 and this year",
+		)
+	}
 }
 
 func (f *MovieFilter) Build() (string, []any, error) {

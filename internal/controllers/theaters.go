@@ -24,6 +24,7 @@ import (
 //	@Param			limit	query		integer	flase	"limit"
 //	@Param			offset	query		integer	flase	"offset"
 //	@Success		200		{object}		TheaterSearchResponse
+//	@Failure		400		{object}	httputil.ValidationError
 //	@Failure		400		{object}	httputil.HTTPError
 //	@Failure		500		{object}	httputil.HTTPError
 //	@Router			/api/theaters [get]
@@ -32,6 +33,12 @@ func (h *Application) searchTheatersHandler(c *gin.Context) {
 
 	if err := c.ShouldBindQuery(&filters); err != nil {
 		httputil.NewError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	v := validator.New()
+	if filters.Validate(v); !v.Valid() {
+		httputil.NewValidationError(c, v.Errors)
 		return
 	}
 
