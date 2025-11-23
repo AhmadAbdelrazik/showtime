@@ -119,13 +119,12 @@ func (h *Application) createMovieHandler(c *gin.Context) {
 	movie := &models.Movie{
 		Title:       input.Title,
 		Director:    input.Director,
+		Duration:    input.Duration,
 		ReleaseYear: *input.ReleaseYear,
 		IMDBLink:    input.IMDBLink,
 	}
 
 	// error is checked in the validator
-	duration, _ := time.ParseDuration(input.Duration)
-	movie.Duration = duration
 
 	if err := h.models.Movies.Create(movie); err != nil {
 		httputil.NewError(c, http.StatusInternalServerError, err)
@@ -198,9 +197,7 @@ func (h *Application) updateMovieHandler(c *gin.Context) {
 		movie.ReleaseYear = *input.ReleaseYear
 	}
 	if input.Duration != nil {
-		// error is checked in the validator
-		duration, _ := time.ParseDuration(*input.Duration)
-		movie.Duration = duration
+		movie.Duration = *input.Duration
 	}
 	if input.IMDBLink != nil {
 		movie.IMDBLink = *input.IMDBLink

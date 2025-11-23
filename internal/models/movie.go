@@ -14,14 +14,14 @@ import (
 )
 
 type Movie struct {
-	ID          int           `json:"id"`
-	Title       string        `json:"title"`
-	Director    string        `json:"director"`
-	ReleaseYear int           `json:"release_year"`
-	Duration    time.Duration `json:"duration"`
-	IMDBLink    string        `json:"imdb_link"`
-	CreatedAt   time.Time     `json:"created_at"`
-	UpdatedAt   time.Time     `json:"updated_at"`
+	ID          int       `json:"id"`
+	Title       string    `json:"title"`
+	Director    string    `json:"director"`
+	ReleaseYear int       `json:"release_year"`
+	Duration    string    `json:"duration"`
+	IMDBLink    string    `json:"imdb_link"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type MovieModel struct {
