@@ -23,7 +23,7 @@ import (
 //	@Param			sort_by	query		string	flase	"sort by city or name"
 //	@Param			limit	query		integer	flase	"limit"
 //	@Param			offset	query		integer	flase	"offset"
-//	@Success		200		{object}		TheaterSearchResponse
+//	@Success		200		{object}		SearchTheatersResponse
 //	@Failure		400		{object}	httputil.ValidationError
 //	@Failure		400		{object}	httputil.HTTPError
 //	@Failure		500		{object}	httputil.HTTPError
@@ -48,7 +48,7 @@ func (h *Application) searchTheatersHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, TheaterSearchResponse{theaters})
+	c.JSON(http.StatusOK, SearchTheatersResponse{theaters})
 }
 
 // getTheater godoc
@@ -276,7 +276,7 @@ func (h *Application) deleteTheaterHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, DeleteTheaterResponse{Message: "Deleted Successfully"})
 }
 
-type TheaterSearchResponse struct {
+type SearchTheatersResponse struct {
 	Theaters []models.Theater `json:"theaters"`
 }
 

@@ -26,7 +26,7 @@ import (
 //	@Param			sort_by	query		string	flase	"sort by title or release year"
 //	@Param			limit	query		integer	flase	"limit"
 //	@Param			offset	query		integer	flase	"offset"
-//	@Success		200		{object}		MovieSearchResponse
+//	@Success		200		{object}		SearchMoviesResponse
 //	@Failure		400		{object}	httputil.HTTPError
 //	@Failure		500		{object}	httputil.HTTPError
 //	@Router			/api/movies [get]
