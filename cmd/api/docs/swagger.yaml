@@ -14,6 +14,26 @@ definitions:
       message:
         type: string
     type: object
+  controllers.CreateMovieInput:
+    properties:
+      director:
+        type: string
+      duration:
+        type: string
+      imdb_link:
+        type: string
+      release_year:
+        type: integer
+      title:
+        type: string
+    type: object
+  controllers.CreateMovieResponse:
+    properties:
+      message:
+        type: string
+      movie:
+        $ref: '#/definitions/models.Movie'
+    type: object
   controllers.CreateTheaterInput:
     properties:
       address:
@@ -29,6 +49,11 @@ definitions:
         type: string
       theater:
         $ref: '#/definitions/models.Theater'
+    type: object
+  controllers.DeleteMovieResponse:
+    properties:
+      message:
+        type: string
     type: object
   controllers.DeleteTheaterResponse:
     properties:
@@ -52,6 +77,20 @@ definitions:
       message:
         type: string
     type: object
+  controllers.SearchMoviesResponse:
+    properties:
+      movies:
+        items:
+          $ref: '#/definitions/models.Movie'
+        type: array
+    type: object
+  controllers.SearchTheatersResponse:
+    properties:
+      theaters:
+        items:
+          $ref: '#/definitions/models.Theater'
+        type: array
+    type: object
   controllers.SignupInput:
     properties:
       email:
@@ -70,13 +109,6 @@ definitions:
       user:
         $ref: '#/definitions/models.User'
     type: object
-  controllers.TheaterSearchResponse:
-    properties:
-      theaters:
-        items:
-          $ref: '#/definitions/models.Theater'
-        type: array
-    type: object
   controllers.UpdateHallInput:
     properties:
       name:
@@ -88,6 +120,26 @@ definitions:
         $ref: '#/definitions/models.Hall'
       message:
         type: string
+    type: object
+  controllers.UpdateMovieInput:
+    properties:
+      director:
+        type: string
+      duration:
+        type: string
+      imdb_link:
+        type: string
+      release_year:
+        type: integer
+      title:
+        type: string
+    type: object
+  controllers.UpdateMovieResponse:
+    properties:
+      message:
+        type: string
+      movie:
+        $ref: '#/definitions/models.Movie'
     type: object
   controllers.UpdateTheaterInput:
     properties:
@@ -138,6 +190,25 @@ definitions:
         type: string
       theater_id:
         type: integer
+      updated_at:
+        type: string
+    type: object
+  models.Movie:
+    properties:
+      created_at:
+        type: string
+      director:
+        type: string
+      duration:
+        type: string
+      id:
+        type: integer
+      imdb_link:
+        type: string
+      release_year:
+        type: integer
+      title:
+        type: string
       updated_at:
         type: string
     type: object
@@ -238,6 +309,196 @@ paths:
       summary: User Logout
       tags:
       - auth
+  /api/movies:
+    get:
+      description: Search movies based on name or city
+      parameters:
+      - description: movie title
+        in: query
+        name: title
+        type: string
+      - description: movie director
+        in: query
+        name: director
+        type: string
+      - description: release year
+        in: query
+        name: release_year
+        type: integer
+      - description: sort by title or release year
+        in: query
+        name: sort_by
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.SearchMoviesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Movies Search
+      tags:
+      - movies
+    post:
+      consumes:
+      - application/json
+      description: Creates a new movie
+      parameters:
+      - description: new movie data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateMovieInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.CreateMovieResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Create Movie
+      tags:
+      - movies
+  /api/movies/{id}:
+    delete:
+      description: Delete Movie by ID
+      parameters:
+      - description: movie id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.DeleteMovieResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Delete Movie
+      tags:
+      - movies
+    get:
+      description: Get Movie by ID
+      parameters:
+      - description: movie id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Movie'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Get Movie
+      tags:
+      - movies
+    patch:
+      consumes:
+      - application/json
+      description: Update an existing movie
+      parameters:
+      - description: movie id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: updated movie data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.UpdateMovieInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.UpdateMovieResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Update Movie
+      tags:
+      - movies
   /api/signup:
     post:
       consumes:
@@ -302,7 +563,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.TheaterSearchResponse'
+            $ref: '#/definitions/controllers.SearchTheatersResponse'
         "400":
           description: Bad Request
           schema:
