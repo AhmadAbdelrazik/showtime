@@ -16,6 +16,7 @@ type Hall struct {
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	Schedule  Schedule  `json:"schedule"`
 }
 
 type HallModel struct {
@@ -49,12 +50,18 @@ func (m *HallModel) Create(hall *Hall) error {
 }
 
 func (m *HallModel) Find(id int) (*Hall, error) {
-	query := `SELECT theater_id, name, code, created_at, updated_at
-	FROM halls
+	query := `SELECT h.theater_id, h.name, h.code, h.created_at, h.updated_at, 
+	FROM halls AS h
+	JOIN shows AS s ON s.hall_id = h.id
 	WHERE id = $1`
 
 	hall := &Hall{
 		ID: id,
+		Schedule: Schedule{
+			From:  time.Now().UTC(),
+			To:    time.Now().UTC().Add(time.Hour * 24 * 7),
+			Shows: []Show{},
+		},
 	}
 
 	err := m.db.QueryRow(query, id).Scan(

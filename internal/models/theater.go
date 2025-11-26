@@ -25,6 +25,15 @@ type Theater struct {
 	Halls     []Hall    `json:"halls"`
 }
 
+func (t Theater) HasHall(code string) bool {
+	for _, h := range t.Halls {
+		if h.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
 type TheaterModel struct {
 	db *sql.DB
 }
