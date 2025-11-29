@@ -28,13 +28,18 @@ type ShowModel struct {
 }
 
 func (m *ShowModel) Create(show *Show) error {
-	query := `INSERT INTO shows(movie_id, hall_id,
-	movie_imdb_link, start_time, end_time)
-	VALUES ($1, $2, $3, $4, $5, $6)
-	RETURNING id, created_at, updated_at`
+	query := `INSERT INTO shows(movie_id, hall_id, start_time, end_time)
+	SELECT m.id, h.id, $4, $5
+	FROM movies AS m
+	JOIN halls AS h ON h.theater_id = $2 AND h.code = $3
+	WHERE m.id = $1
+	RETURNING id, created_at, updated_at
+	`
+
 	args := []any{
 		show.MovieID,
-		show.HallID,
+		show.TheaterID,
+		show.HallCode,
 		show.StartTime,
 		show.EndTime,
 	}
