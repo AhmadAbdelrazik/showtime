@@ -1,5 +1,7 @@
 # **Showtime 🎬**
 
+![Showtime](https://github.com/AhmadAbdelrazik/showtime/blob/main/showtime.png)
+
 *A Go REST API for managing movie theaters, halls, movies, and show schedules.*
 
 Showtime is a backend service built with **Go**, **Gin**, and **PostgreSQL**.
