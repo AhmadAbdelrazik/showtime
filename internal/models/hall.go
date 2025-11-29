@@ -16,11 +16,37 @@ type Hall struct {
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Schedule  Schedule  `json:"schedule"`
+	Schedule  *Schedule `json:"schedule"`
 }
 
 type HallModel struct {
 	db *sql.DB
+}
+
+var (
+	ErrInvalidSchedule = errors.New("invalid schedule")
+)
+
+type Schedule struct {
+	From  time.Time
+	To    time.Time
+	Shows []Show
+}
+
+func (s Schedule) IsFree(show Show) error {
+	for _, sh := range s.Shows {
+		if sh.StartTime.Before(show.EndTime) && show.StartTime.Before(sh.EndTime) {
+			return fmt.Errorf(
+				"%w: contradiction with screening of %v from %v to %v",
+				ErrInvalidSchedule,
+				sh.MovieTitle,
+				sh.StartTime,
+				sh.EndTime,
+			)
+		}
+	}
+
+	return nil
 }
 
 func (m *HallModel) Create(hall *Hall) error {
@@ -50,18 +76,12 @@ func (m *HallModel) Create(hall *Hall) error {
 }
 
 func (m *HallModel) Find(id int) (*Hall, error) {
-	query := `SELECT h.theater_id, h.name, h.code, h.created_at, h.updated_at, 
-	FROM halls AS h
-	JOIN shows AS s ON s.hall_id = h.id
-	WHERE id = $1`
+	query := `SELECT theater_id, name, code, created_at, updated_at
+	FROM halls
+	WHERE theater_id = $1 AND code = $2`
 
 	hall := &Hall{
 		ID: id,
-		Schedule: Schedule{
-			From:  time.Now().UTC(),
-			To:    time.Now().UTC().Add(time.Hour * 24 * 7),
-			Shows: []Show{},
-		},
 	}
 
 	err := m.db.QueryRow(query, id).Scan(

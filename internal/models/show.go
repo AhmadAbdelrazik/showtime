@@ -9,20 +9,6 @@ import (
 	"time"
 )
 
-var (
-	ErrInvalidSchedule = errors.New("invalid schedule")
-)
-
-type Schedule struct {
-	From  time.Time
-	To    time.Time
-	Shows []Show
-}
-
-func (s Schedule) IsFree(show Show) error {
-	return nil
-}
-
 type Show struct {
 	ID            int       `json:"id"`
 	TheaterID     int       `json:"theater_id,omitempty"`
