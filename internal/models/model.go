@@ -19,8 +19,10 @@ type Model struct {
 	Theaters *TheaterModel
 	Halls    *HallModel
 	Movies   *MovieModel
+	Shows    *ShowModel
 }
 
+// New creates a new model with the given database dsn
 func New(dsn string) (*Model, error) {
 	slog.Debug("Connecting to database")
 	db, err := sql.Open("postgres", dsn)
@@ -47,5 +49,6 @@ func New(dsn string) (*Model, error) {
 		Theaters: &TheaterModel{db},
 		Halls:    &HallModel{db},
 		Movies:   &MovieModel{db},
+		Shows:    &ShowModel{db},
 	}, nil
 }

@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
@@ -28,11 +30,9 @@ import (
 //	@Failure		500		{object}	httputil.HTTPError
 //	@Router			/api/theaters/{id}/shows [post]
 func (h *Application) createShowHandler(c *gin.Context) {
-
-	// 1. Check if the user is authorized
-	// 2. Check if the theater and hall exist
-	// 3. Check if the hall is available at the specified time
-	// 3.1
+	// 1. get Theater: (check auth, check hall existance)
+	// 2. check if movie exists
+	// 3. Create show
 
 	var input CreateShowInput
 
@@ -78,7 +78,16 @@ func (h *Application) createShowHandler(c *gin.Context) {
 		return
 	}
 
-	hall, err := h.models.Halls.FindByCode(theater.ID, input.HallCode)
+	if !theater.HasHall(input.HallCode) {
+		httputil.NewError(
+			c,
+			http.StatusNotFound,
+			fmt.Errorf("hall with code %v doesn't exist", input.HallCode),
+		)
+		return
+	}
+
+	movie, err := h.models.Movies.Find(input.MovieID)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -89,15 +98,168 @@ func (h *Application) createShowHandler(c *gin.Context) {
 		return
 	}
 
+	movieDuration, err := time.ParseDuration(movie.Duration)
+	if err != nil {
+		panic(err)
+	}
+
+	if input.EndTime.Sub(input.StartTime) < movieDuration {
+		v := validator.New()
+		v.AddError("duration", fmt.Sprintf("movie duration (%v) is longer than reserved time", movie.Duration))
+		httputil.NewValidationError(c, v.Errors)
+		return
+	}
+
+	show := &models.Show{
+		MovieID:   movie.ID,
+		TheaterID: theater.ID,
+		HallCode:  input.HallCode,
+		StartTime: input.StartTime,
+		EndTime:   input.EndTime,
+	}
+
+	if err := h.models.Shows.Create(show); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			httputil.NewError(c, http.StatusNotFound, err)
+		default:
+			httputil.NewError(c, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, CreateShowResponse{
+		Message: "show created successfully",
+	})
+}
+
+// getShow godoc
+//
+//	@Summary		Get Show
+//	@Description	Get Show by ID
+//	@Tags			shows
+//	@Produce		json
+//	@Param			id	path		int	true	"theater id"
+//	@Param			show_id	path		string	true	"show code"
+//	@Success		200	{object}	models.Show
+//	@Failure		400	{object}	httputil.HTTPError
+//	@Failure		404	{object}	httputil.HTTPError
+//	@Failure		500	{object}	httputil.HTTPError
+//	@Router			/api/theaters/{id}/shows/{show_id} [get]
+func (h *Application) getShowHandler(c *gin.Context) {
+	theaterIdStr := c.Param("id")
+	theaterID, err := strconv.Atoi(theaterIdStr)
+	if err != nil {
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
+	}
+	showIdStr := c.Param("showId")
+	showId, err := strconv.Atoi(showIdStr)
+	if err != nil {
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid show id"))
+	}
+
+	show, err := h.models.Shows.Find(showId)
+	if err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			httputil.NewError(c, http.StatusNotFound, err)
+		default:
+			httputil.NewError(c, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	if show.TheaterID != theaterID {
+		httputil.NewError(c, http.StatusNotFound, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, show)
+}
+
+// deleteShow godoc
+//
+//	@Summary		Delete Show
+//	@Description	Delete theater's show by Show ID
+//	@Tags			shows
+//	@Produce		json
+//	@Param			id	path		int	true	"theater id"
+//	@Param			show_id	path		string	true	"show id"
+//	@Success		200	{object}	DeleteShowResponse
+//	@Failure		400	{object}	httputil.HTTPError
+//	@Failure		401	{object}	httputil.HTTPError
+//	@Failure		403	{object}	httputil.HTTPError
+//	@Failure		404	{object}	httputil.HTTPError
+//	@Failure		500	{object}	httputil.HTTPError
+//	@Router			/api/theaters/{id}/shows/{show_id} [delete]
+func (h *Application) deleteShowHandler(c *gin.Context) {
+	theaterIdStr := c.Param("id")
+	theaterID, err := strconv.Atoi(theaterIdStr)
+	if err != nil {
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
+	}
+	showIdStr := c.Param("showId")
+	showId, err := strconv.Atoi(showIdStr)
+	if err != nil {
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid show id"))
+	}
+
+	user := c.MustGet("user").(*models.User)
+
+	theater, err := h.models.Theaters.Find(int(theaterID))
+	if err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			httputil.NewError(c, http.StatusNotFound, err)
+		default:
+			httputil.NewError(c, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	if theater.ManagerID != user.ID {
+		httputil.NewError(
+			c,
+			http.StatusForbidden,
+			errors.New("creating halls is available for theater's manager only."),
+		)
+		return
+	}
+
+	if err := h.models.Shows.Delete(showId); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			httputil.NewError(c, http.StatusNotFound, err)
+		default:
+			httputil.NewError(c, http.StatusInternalServerError, err)
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, DeleteShowResponse{Message: "Deleted Successfully"})
 }
 
 type CreateShowInput struct {
-	MovieID  int
-	HallCode string
-	From     time.Time
-	To       time.Time
+	MovieID   int
+	HallCode  string
+	StartTime time.Time
+	EndTime   time.Time
 }
 
 func (i *CreateShowInput) Validate(v *validator.Validator) {
+	v.Check(len(strings.TrimSpace(i.HallCode)) > 0, "hall_code", "required")
+	v.Check(validator.AlphanumRX.MatchString(i.HallCode), "hall_code", "must not contain any spaces or special characters")
+	v.Check(len(i.HallCode) <= 10, "hall_code", "must be at most 50 characters")
 
+	v.Check(i.StartTime.Before(i.EndTime), "start_time", "can't be after end_time")
+	v.Check(i.EndTime.Sub(i.StartTime).Minutes() == 0, "duration", "duration difference must be in hours e.g. 1h, 3h, etc...")
+}
+
+type CreateShowResponse struct {
+	Message string      `json:"message"`
+	Show    models.Show `json:"show"`
+}
+
+type DeleteShowResponse struct {
+	Message string `json:"message"`
 }

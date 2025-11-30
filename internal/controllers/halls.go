@@ -233,7 +233,7 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 //	@Produce		json
 //	@Param			id	path		int	true	"theater id"
 //	@Param			code	path		string	true	"hall code"
-//	@Success		200	{object}	DeleteTheaterResponse
+//	@Success		200	{object}	DeleteHallResponse
 //	@Failure		400	{object}	httputil.HTTPError
 //	@Failure		401	{object}	httputil.HTTPError
 //	@Failure		403	{object}	httputil.HTTPError
