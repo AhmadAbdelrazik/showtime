@@ -1,0 +1,44 @@
+services:
+  db:
+    image: postgres:latest
+    container_name: app-db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: showtime_dev
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d showtime_dev"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: migrate/migrate
+    container_name: app-migrations
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://user:pass@db:5432/showtime_dev?sslmode=disable",
+      "up"
+    ]
+    restart: "on-failure"
+
+  api:
+    build: .
+    container_name: app-api
+    env_file: .env
+    environment:
+      DB_DSN: postgres://user:pass@db:5432/showtime_dev?sslmode=disable
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
