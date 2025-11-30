@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 )
 
@@ -52,10 +51,8 @@ func (m *ShowModel) Create(show *Show) error {
 
 	if err != nil {
 		switch {
-		case strings.Contains(err.Error(), "shows_hall_id_fkey"):
-			return fmt.Errorf("%w: hall with id %v was not found", ErrNotFound, show.HallID)
-		case strings.Contains(err.Error(), "shows_movie_id_fkey"):
-			return fmt.Errorf("%w: movie with id %v was not found", ErrNotFound, show.MovieID)
+		case errors.Is(err, sql.ErrNoRows):
+			return fmt.Errorf("%w: check if movie and hall exists", ErrNotFound)
 		default:
 			slog.Error("SQL Database Failure", "error", err)
 			return err
@@ -102,4 +99,23 @@ func (m *ShowModel) Find(id int) (*Show, error) {
 	}
 
 	return show, nil
+}
+
+func (m *ShowModel) Delete(id int) error {
+	query := `DELETE FROM shows WHERE id = $1`
+
+	result, err := m.db.Exec(query, id)
+	if err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	}
+
+	if rows, err := result.RowsAffected(); err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	} else if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
 }

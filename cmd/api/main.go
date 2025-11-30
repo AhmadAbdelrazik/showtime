@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/slog"
 	"os"
@@ -30,10 +31,13 @@ import (
 // @host		localhost:8080
 // @BasePath	/api/v1
 func main() {
-	// load .env
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("failed to load .env file")
-		os.Exit(1)
+	_, err := os.Stat(".env")
+	if err == nil {
+		// load .env
+		if err := godotenv.Load(); err != nil {
+			log.Fatal("failed to load .env file")
+			os.Exit(1)
+		}
 	}
 
 	// setup structured logging (slog)
@@ -47,8 +51,22 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
 	slog.SetDefault(logger)
 
+	var dsn string
+
+	if os.Getenv("DB_DSN") != "" {
+		dsn = os.Getenv("DB_DSN")
+	} else {
+		dsn = fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
+			os.Getenv("DB_USER"),
+			os.Getenv("DB_PASSWORD"),
+			os.Getenv("DB_HOST"),
+			os.Getenv("DB_PORT"),
+			os.Getenv("DB_DATABASE"),
+		)
+	}
+
 	// Initialize controllers with dsn for Models
-	app, err := controllers.New(os.Getenv("DB_DSN"))
+	app, err := controllers.New(dsn)
 	if err != nil {
 		log.Fatal("Error Loading Controller" + err.Error())
 	}
