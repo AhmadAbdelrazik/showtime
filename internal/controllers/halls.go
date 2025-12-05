@@ -172,8 +172,8 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 		return
 	}
 
-	// fetch theater from db
-	theater, err := h.models.Theaters.Find(int(theaterID))
+	// add hall
+	hall, err := h.models.Halls.FindByCode(int(theaterID), hallCode)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -185,24 +185,12 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 	}
 
 	// check authorization
-	if theater.ManagerID != user.ID {
+	if hall.ManagerID != user.ID {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
 			errors.New("creating halls is available for theater's manager only."),
 		)
-		return
-	}
-
-	// add hall
-	hall, err := h.models.Halls.FindByCode(int(theaterID), hallCode)
-	if err != nil {
-		switch {
-		case errors.Is(err, models.ErrNotFound):
-			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
 		return
 	}
 
