@@ -174,8 +174,8 @@ type ShowFilter struct {
 	MovieTitle  *string    `form:"movie_title"`
 	TheaterName *string    `form:"theater_name"`
 	TheaterCity *string    `form:"theater_city"`
-	StartDate   *time.Time `form:"start_date"`
-	EndDate     *time.Time `form:"end_date"`
+	StartDate   *time.Time `form:"start_date" time_format:"2006-01-02"`
+	EndDate     *time.Time `form:"end_date" time_format:"2006-01-02"`
 	SortBy      *string    `form:"sort_by"`
 	Limit       *uint      `form:"limit"`
 	Offset      *uint      `form:"offset"`

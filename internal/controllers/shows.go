@@ -14,6 +14,47 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ShowsSearch godoc
+//
+//	@Summary		Shows Search
+//	@Description	Search shows based on movie or theater
+//	@Tags			shows
+//	@Produce		json
+//	@Param			movie_title	query		string	flase	"show title"
+//	@Param			theater_name	query		string	flase	"show title"
+//	@Param			theater_city	query		string	flase	"show title"
+//	@Param			start_date	query		string	flase	"show title"
+//	@Param			end_date	query		string	flase	"show title"
+//	@Param			sort_by	query		string	flase	"sort by title or release year"
+//	@Param			limit	query		integer	flase	"limit"
+//	@Param			offset	query		integer	flase	"offset"
+//	@Success		200		{object}		SearchShowsResponse
+//	@Failure		400		{object}	httputil.HTTPError
+//	@Failure		500		{object}	httputil.HTTPError
+//	@Router			/api/shows [get]
+func (h *Application) searchShowsHandler(c *gin.Context) {
+	var filters models.ShowFilter
+
+	if err := c.ShouldBindQuery(&filters); err != nil {
+		httputil.NewError(c, http.StatusBadRequest, err)
+		return
+	}
+
+	v := validator.New()
+	if filters.Validate(v); !v.Valid() {
+		httputil.NewValidationError(c, v.Errors)
+		return
+	}
+
+	shows, err := h.models.Shows.Search(filters)
+	if err != nil {
+		httputil.NewError(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, SearchShowsResponse{shows})
+}
+
 // CreateShow godoc
 //
 //	@Summary		Create Show
@@ -30,10 +71,6 @@ import (
 //	@Failure		500		{object}	httputil.HTTPError
 //	@Router			/api/theaters/{id}/shows [post]
 func (h *Application) createShowHandler(c *gin.Context) {
-	// 1. get Theater: (check auth, check hall existance)
-	// 2. check if movie exists
-	// 3. Create show
-
 	var input CreateShowInput
 
 	theaterIdStr := c.Param("id")
@@ -57,7 +94,7 @@ func (h *Application) createShowHandler(c *gin.Context) {
 		return
 	}
 
-	theater, err := h.models.Theaters.Find(int(theaterID))
+	hall, err := h.models.Halls.FindByCode(int(theaterID), input.HallCode)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -69,20 +106,11 @@ func (h *Application) createShowHandler(c *gin.Context) {
 	}
 
 	// check authorization
-	if theater.ManagerID != user.ID {
+	if hall.ManagerID != user.ID {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
-			errors.New("creating halls is available for theater's manager only."),
-		)
-		return
-	}
-
-	if !theater.HasHall(input.HallCode) {
-		httputil.NewError(
-			c,
-			http.StatusNotFound,
-			fmt.Errorf("hall with code %v doesn't exist", input.HallCode),
+			errors.New("creating shows is available for theater's manager only."),
 		)
 		return
 	}
@@ -112,7 +140,7 @@ func (h *Application) createShowHandler(c *gin.Context) {
 
 	show := &models.Show{
 		MovieID:   movie.ID,
-		TheaterID: theater.ID,
+		TheaterID: hall.TheaterID,
 		HallCode:  input.HallCode,
 		StartTime: input.StartTime,
 		EndTime:   input.EndTime,
@@ -221,7 +249,7 @@ func (h *Application) deleteShowHandler(c *gin.Context) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
-			errors.New("creating halls is available for theater's manager only."),
+			errors.New("deleting shows is available for theater's manager only."),
 		)
 		return
 	}
@@ -237,6 +265,10 @@ func (h *Application) deleteShowHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, DeleteShowResponse{Message: "Deleted Successfully"})
+}
+
+type SearchShowsResponse struct {
+	Shows []models.Show `json:"shows"`
 }
 
 type CreateShowInput struct {

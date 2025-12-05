@@ -39,6 +39,7 @@ func (a *Application) Routes(r *gin.Engine) {
 	auth.DELETE("/movies/:id", a.deleteMovieHandler)
 
 	// shows
+	api.GET("/shows", a.searchShowsHandler)
 	api.GET("/theaters/:id/shows/:showId", a.getShowHandler)
 
 	auth.POST("/theaters/:id/shows", a.createShowHandler)
