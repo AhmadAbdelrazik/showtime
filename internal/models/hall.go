@@ -80,58 +80,200 @@ func (m *HallModel) Create(hall *Hall) error {
 }
 
 func (m *HallModel) Find(id int) (*Hall, error) {
-	query := `SELECT theater_id, name, code, created_at, updated_at
-	FROM halls
-	WHERE theater_id = $1 AND code = $2`
+	return m.FindWithSchedule(id, time.Now(), time.Now().Add(time.Hour*24*7))
+}
+
+func (m *HallModel) FindByCode(theaterID int, code string) (*Hall, error) {
+	return m.FindByCodeWithSchedule(theaterID, code, time.Now(), time.Now().Add(time.Hour*24*7))
+}
+
+func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to time.Time) (*Hall, error) {
+	query := `SELECT h.theater_id, h.name, h.id,
+	h.created_at, h.updated_at, s.id, h.theater_id, h.id,
+	h.code, m.id, m.title, m.imdb_link, s.start_time,
+	s.end_time, s.created_at, s.updated_at
+	FROM halls AS h
+	JOIN shows AS s on s.hall_id = h.id
+	JOIN movies AS m on s.movie_id = m.id
+	WHERE h.theater_id = $1 AND h.code = $2 AND s.end_time >= $3 AND s.start_time <= $4`
+
+	args := []any{theaterID, code, from, to}
+
+	rows, err := m.db.Query(query, args...)
+	if err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return nil, err
+	}
+	defer rows.Close()
 
 	hall := &Hall{
-		ID: id,
+		Code: code,
+		Schedule: &Schedule{
+			From:  from,
+			To:    to,
+			Shows: []Show{},
+		},
 	}
 
-	err := m.db.QueryRow(query, id).Scan(
-		&hall.TheaterID,
-		&hall.Name,
-		&hall.Code,
-		&hall.CreatedAt,
-		&hall.UpdatedAt,
-	)
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrNotFound
-		default:
-			slog.Error("SQL Database Failure", "error", err)
+	type ShowDB struct {
+		ID            sql.NullInt32
+		TheaterID     sql.NullInt32
+		HallID        sql.NullInt32
+		HallCode      sql.NullString
+		MovieID       sql.NullInt32
+		MovieTitle    sql.NullString
+		MovieIMDBLink sql.NullString
+		StartTime     sql.NullTime
+		EndTime       sql.NullTime
+		CreatedAt     sql.NullTime
+		UpdatedAt     sql.NullTime
+	}
+
+	first := true
+	for rows.Next() {
+		first = false
+		var s ShowDB
+		var show Show
+
+		err := rows.Scan(
+			&hall.TheaterID,
+			&hall.Name,
+			&hall.ID,
+			&hall.CreatedAt,
+			&hall.UpdatedAt,
+			&s.ID,
+			&s.TheaterID,
+			&s.HallID,
+			&s.HallCode,
+			&s.MovieID,
+			&s.MovieTitle,
+			&s.MovieIMDBLink,
+			&s.StartTime,
+			&s.EndTime,
+			&s.CreatedAt,
+			&s.UpdatedAt,
+		)
+
+		if err != nil {
+			slog.Error("Scan Failure", "error", err)
 			return nil, err
 		}
+
+		if s.ID.Valid {
+			show.ID = int(s.ID.Int32)
+			show.TheaterID = int(s.TheaterID.Int32)
+			show.HallID = int(s.HallID.Int32)
+			show.HallCode = s.HallCode.String
+			show.MovieID = int(s.MovieID.Int32)
+			show.MovieTitle = s.MovieTitle.String
+			show.MovieIMDBLink = s.MovieIMDBLink.String
+			show.StartTime = s.StartTime.Time
+			show.EndTime = s.EndTime.Time
+			show.CreatedAt = s.CreatedAt.Time
+			show.UpdatedAt = s.UpdatedAt.Time
+
+			hall.Schedule.Shows = append(hall.Schedule.Shows, show)
+		}
+
+	}
+
+	if first {
+		return nil, ErrNotFound
 	}
 
 	return hall, nil
 }
 
-func (m *HallModel) FindByCode(theaterID int, code string) (*Hall, error) {
-	query := `SELECT id, name, created_at, updated_at
-	FROM halls
-	WHERE theater_id = $1 AND code = $2`
+func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) {
+	query := `SELECT h.theater_id, h.name, h.code,
+	h.created_at, h.updated_at, s.id, h.theater_id, h.id,
+	h.code, m.id, m.title, m.imdb_link, s.start_time,
+	s.end_time, s.created_at, s.updated_at
+	FROM halls AS h
+	JOIN shows AS s on s.hall_id = h.id
+	JOIN movies AS m on s.movie_id = m.id
+	WHERE h.id = $1 AND s.end_time >= $2 AND s.start_time <= $3`
+
+	rows, err := m.db.Query(query, id, from, to)
+	if err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return nil, err
+	}
+	defer rows.Close()
 
 	hall := &Hall{
-		TheaterID: theaterID,
-		Code:      code,
+		ID: id,
+		Schedule: &Schedule{
+			From:  from,
+			To:    to,
+			Shows: []Show{},
+		},
 	}
 
-	err := m.db.QueryRow(query, theaterID, code).Scan(
-		&hall.ID,
-		&hall.Name,
-		&hall.CreatedAt,
-		&hall.UpdatedAt,
-	)
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return nil, ErrNotFound
-		default:
-			slog.Error("SQL Database Failure", "error", err)
+	type ShowDB struct {
+		ID            sql.NullInt32
+		TheaterID     sql.NullInt32
+		HallID        sql.NullInt32
+		HallCode      sql.NullString
+		MovieID       sql.NullInt32
+		MovieTitle    sql.NullString
+		MovieIMDBLink sql.NullString
+		StartTime     sql.NullTime
+		EndTime       sql.NullTime
+		CreatedAt     sql.NullTime
+		UpdatedAt     sql.NullTime
+	}
+
+	first := true
+	for rows.Next() {
+		first = false
+		var s ShowDB
+		var show Show
+
+		err := rows.Scan(
+			&hall.TheaterID,
+			&hall.Name,
+			&hall.Code,
+			&hall.CreatedAt,
+			&hall.UpdatedAt,
+			&s.ID,
+			&s.TheaterID,
+			&s.HallID,
+			&s.HallCode,
+			&s.MovieID,
+			&s.MovieTitle,
+			&s.MovieIMDBLink,
+			&s.StartTime,
+			&s.EndTime,
+			&s.CreatedAt,
+			&s.UpdatedAt,
+		)
+
+		if err != nil {
+			slog.Error("Scan Failure", "error", err)
 			return nil, err
 		}
+
+		if s.ID.Valid {
+			show.ID = int(s.ID.Int32)
+			show.TheaterID = int(s.TheaterID.Int32)
+			show.HallID = int(s.HallID.Int32)
+			show.HallCode = s.HallCode.String
+			show.MovieID = int(s.MovieID.Int32)
+			show.MovieTitle = s.MovieTitle.String
+			show.MovieIMDBLink = s.MovieIMDBLink.String
+			show.StartTime = s.StartTime.Time
+			show.EndTime = s.EndTime.Time
+			show.CreatedAt = s.CreatedAt.Time
+			show.UpdatedAt = s.UpdatedAt.Time
+
+			hall.Schedule.Shows = append(hall.Schedule.Shows, show)
+		}
+
+	}
+
+	if first {
+		return nil, ErrNotFound
 	}
 
 	return hall, nil
