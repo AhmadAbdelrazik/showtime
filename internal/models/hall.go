@@ -34,6 +34,10 @@ type Schedule struct {
 }
 
 func (s Schedule) IsFree(show Show) error {
+	if show.StartTime.Before(s.From) || show.EndTime.After(s.To) {
+		return fmt.Errorf("%w: schedule is out of the selected range (%v to %v)", ErrInvalidSchedule, s.From, s.To)
+	}
+
 	for _, sh := range s.Shows {
 		if sh.StartTime.Before(show.EndTime) && show.StartTime.Before(sh.EndTime) {
 			return fmt.Errorf(
