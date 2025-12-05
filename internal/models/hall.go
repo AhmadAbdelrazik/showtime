@@ -12,6 +12,7 @@ import (
 type Hall struct {
 	ID        int       `json:"id"`
 	TheaterID int       `json:"theater_id"`
+	ManagerID int       `json:"manager_id"`
 	Name      string    `json:"name"`
 	Code      string    `json:"code"`
 	CreatedAt time.Time `json:"created_at"`
@@ -88,12 +89,13 @@ func (m *HallModel) FindByCode(theaterID int, code string) (*Hall, error) {
 }
 
 func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to time.Time) (*Hall, error) {
-	query := `SELECT h.theater_id, h.name, h.id,
+	query := `SELECT h.theater_id, h.name, h.id, h.manager_id,
 	h.created_at, h.updated_at, s.id, h.theater_id, h.id,
 	h.code, m.id, m.title, m.imdb_link, s.start_time,
 	s.end_time, s.created_at, s.updated_at
 	FROM halls AS h
 	JOIN shows AS s on s.hall_id = h.id
+	JOIN thaeters AS t on h.theater_id = t.id
 	JOIN movies AS m on s.movie_id = m.id
 	WHERE h.theater_id = $1 AND h.code = $2 AND s.end_time >= $3 AND s.start_time <= $4`
 
@@ -139,6 +141,7 @@ func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to 
 			&hall.TheaterID,
 			&hall.Name,
 			&hall.ID,
+			&hall.ManagerID,
 			&hall.CreatedAt,
 			&hall.UpdatedAt,
 			&s.ID,
@@ -185,7 +188,7 @@ func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to 
 }
 
 func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) {
-	query := `SELECT h.theater_id, h.name, h.code,
+	query := `SELECT h.theater_id, h.name, h.code, h.manager_id,
 	h.created_at, h.updated_at, s.id, h.theater_id, h.id,
 	h.code, m.id, m.title, m.imdb_link, s.start_time,
 	s.end_time, s.created_at, s.updated_at
@@ -234,6 +237,7 @@ func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) 
 			&hall.TheaterID,
 			&hall.Name,
 			&hall.Code,
+			&hall.ManagerID,
 			&hall.CreatedAt,
 			&hall.UpdatedAt,
 			&s.ID,
