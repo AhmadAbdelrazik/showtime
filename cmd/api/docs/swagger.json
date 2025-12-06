@@ -377,6 +377,88 @@
                 }
             }
         },
+        "/api/shows": {
+            "get": {
+                "description": "Search shows based on movie or theater",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shows"
+                ],
+                "summary": "Shows Search",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "show title",
+                        "name": "movie_title",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "show title",
+                        "name": "theater_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "show title",
+                        "name": "theater_city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "show title",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "show title",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "sort by title or release year",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.SearchShowsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/api/signup": {
             "post": {
                 "description": "Registers a new user account",
@@ -875,7 +957,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/controllers.DeleteTheaterResponse"
+                            "$ref": "#/definitions/controllers.DeleteHallResponse"
                         }
                     },
                     "400": {
@@ -974,6 +1056,189 @@
                 }
             }
         },
+        "/api/theaters/{id}/shows": {
+            "post": {
+                "description": "Creates a new theater's show",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shows"
+                ],
+                "summary": "Create Show",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "new show data",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateShowInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.CreateShowResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.ValidationError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/theaters/{id}/shows/{show_id}": {
+            "get": {
+                "description": "Get Show by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shows"
+                ],
+                "summary": "Get Show",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "show code",
+                        "name": "show_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Show"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete theater's show by Show ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "shows"
+                ],
+                "summary": "Delete Show",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "theater id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "show id",
+                        "name": "show_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.DeleteShowResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httputil.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
         "/api/user-info": {
             "get": {
                 "description": "Logout users from the system.",
@@ -1049,6 +1314,34 @@
                 }
             }
         },
+        "controllers.CreateShowInput": {
+            "type": "object",
+            "properties": {
+                "endTime": {
+                    "type": "string"
+                },
+                "hallCode": {
+                    "type": "string"
+                },
+                "movieID": {
+                    "type": "integer"
+                },
+                "startTime": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.CreateShowResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "show": {
+                    "$ref": "#/definitions/models.Show"
+                }
+            }
+        },
         "controllers.CreateTheaterInput": {
             "type": "object",
             "properties": {
@@ -1074,7 +1367,23 @@
                 }
             }
         },
+        "controllers.DeleteHallResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "controllers.DeleteMovieResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "controllers.DeleteShowResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -1124,6 +1433,17 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.Movie"
+                    }
+                }
+            }
+        },
+        "controllers.SearchShowsResponse": {
+            "type": "object",
+            "properties": {
+                "shows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Show"
                     }
                 }
             }
@@ -1285,8 +1605,14 @@
                 "id": {
                     "type": "integer"
                 },
+                "manager_id": {
+                    "type": "integer"
+                },
                 "name": {
                     "type": "string"
+                },
+                "schedule": {
+                    "$ref": "#/definitions/models.Schedule"
                 },
                 "theater_id": {
                     "type": "integer"
@@ -1319,6 +1645,61 @@
                 },
                 "title": {
                     "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Schedule": {
+            "type": "object",
+            "properties": {
+                "from": {
+                    "type": "string"
+                },
+                "shows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Show"
+                    }
+                },
+                "to": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Show": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "hall_code": {
+                    "type": "string"
+                },
+                "hall_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "movie_id": {
+                    "type": "integer"
+                },
+                "movie_imdb_link": {
+                    "type": "string"
+                },
+                "movie_title": {
+                    "type": "string"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "theater_id": {
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"

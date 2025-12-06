@@ -34,6 +34,24 @@ definitions:
       movie:
         $ref: '#/definitions/models.Movie'
     type: object
+  controllers.CreateShowInput:
+    properties:
+      endTime:
+        type: string
+      hallCode:
+        type: string
+      movieID:
+        type: integer
+      startTime:
+        type: string
+    type: object
+  controllers.CreateShowResponse:
+    properties:
+      message:
+        type: string
+      show:
+        $ref: '#/definitions/models.Show'
+    type: object
   controllers.CreateTheaterInput:
     properties:
       address:
@@ -50,7 +68,17 @@ definitions:
       theater:
         $ref: '#/definitions/models.Theater'
     type: object
+  controllers.DeleteHallResponse:
+    properties:
+      message:
+        type: string
+    type: object
   controllers.DeleteMovieResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  controllers.DeleteShowResponse:
     properties:
       message:
         type: string
@@ -82,6 +110,13 @@ definitions:
       movies:
         items:
           $ref: '#/definitions/models.Movie'
+        type: array
+    type: object
+  controllers.SearchShowsResponse:
+    properties:
+      shows:
+        items:
+          $ref: '#/definitions/models.Show'
         type: array
     type: object
   controllers.SearchTheatersResponse:
@@ -186,8 +221,12 @@ definitions:
         type: string
       id:
         type: integer
+      manager_id:
+        type: integer
       name:
         type: string
+      schedule:
+        $ref: '#/definitions/models.Schedule'
       theater_id:
         type: integer
       updated_at:
@@ -209,6 +248,42 @@ definitions:
         type: integer
       title:
         type: string
+      updated_at:
+        type: string
+    type: object
+  models.Schedule:
+    properties:
+      from:
+        type: string
+      shows:
+        items:
+          $ref: '#/definitions/models.Show'
+        type: array
+      to:
+        type: string
+    type: object
+  models.Show:
+    properties:
+      created_at:
+        type: string
+      end_time:
+        type: string
+      hall_code:
+        type: string
+      hall_id:
+        type: integer
+      id:
+        type: integer
+      movie_id:
+        type: integer
+      movie_imdb_link:
+        type: string
+      movie_title:
+        type: string
+      start_time:
+        type: string
+      theater_id:
+        type: integer
       updated_at:
         type: string
     type: object
@@ -499,6 +574,60 @@ paths:
       summary: Update Movie
       tags:
       - movies
+  /api/shows:
+    get:
+      description: Search shows based on movie or theater
+      parameters:
+      - description: show title
+        in: query
+        name: movie_title
+        type: string
+      - description: show title
+        in: query
+        name: theater_name
+        type: string
+      - description: show title
+        in: query
+        name: theater_city
+        type: string
+      - description: show title
+        in: query
+        name: start_date
+        type: string
+      - description: show title
+        in: query
+        name: end_date
+        type: string
+      - description: sort by title or release year
+        in: query
+        name: sort_by
+        type: string
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      - description: offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.SearchShowsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Shows Search
+      tags:
+      - shows
   /api/signup:
     post:
       consumes:
@@ -794,7 +923,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/controllers.DeleteTheaterResponse'
+            $ref: '#/definitions/controllers.DeleteHallResponse'
         "400":
           description: Bad Request
           schema:
@@ -895,6 +1024,128 @@ paths:
       summary: Update Hall
       tags:
       - halls
+  /api/theaters/{id}/shows:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new theater's show
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: new show data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.CreateShowInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.CreateShowResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.ValidationError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Create Show
+      tags:
+      - shows
+  /api/theaters/{id}/shows/{show_id}:
+    delete:
+      description: Delete theater's show by Show ID
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: show id
+        in: path
+        name: show_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/controllers.DeleteShowResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Delete Show
+      tags:
+      - shows
+    get:
+      description: Get Show by ID
+      parameters:
+      - description: theater id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: show code
+        in: path
+        name: show_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Show'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputil.HTTPError'
+      summary: Get Show
+      tags:
+      - shows
   /api/user-info:
     get:
       description: Logout users from the system.
