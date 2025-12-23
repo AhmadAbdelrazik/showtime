@@ -2,7 +2,7 @@
 
 ![Showtime](https://github.com/AhmadAbdelrazik/showtime/blob/main/showtime.png)
 
-*A Go REST API for managing movie theaters, halls, movies, and show schedules.*
+_A Go REST API for managing movie theaters, halls, movies, and show schedules._
 
 Showtime is a backend service built with **Go**, **Gin**, and **PostgreSQL**.
 It provides authentication, theater and hall management, movie management, and conflict-free movie show scheduling.
@@ -12,16 +12,16 @@ The project follows a modular architecture (`cmd/`, `internal/`, `pkg/`), uses d
 
 ## 🚀 **Features**
 
-* **User Authentication** (Signup, Login, Logout, JWT-based)
-* **Theater Management**
-* **Hall Management** (per theater)
-* **Movie Management**
-* **Show Scheduling**
+- **User Authentication** (Signup, Login, Logout, JWT-based)
+- **Theater Management**
+- **Hall Management** (per theater)
+- **Movie Management**
+- **Show Scheduling**
+  - With **automatic show-time conflict detection**
 
-  * With **automatic show-time conflict detection**
-* **PostgreSQL integration** with migration system
-* **Swagger auto-generated API docs**
-* **Modular folder structure** (`controllers`, `models`, `pkg`, etc.)
+- **PostgreSQL integration** with migration system
+- **Swagger auto-generated API docs**
+- **Modular folder structure** (`controllers`, `models`, `pkg`, etc.)
 
 ---
 
@@ -98,7 +98,7 @@ DELETE /api/movies/:id         (auth required)
 
 ### **Shows**
 
-*(Under Development)*
+_(Under Development)_
 
 ---
 
@@ -204,18 +204,10 @@ Swagger UI will be served automatically when you run the API.
 
 ## 🧩 **Tech Stack**
 
-* **Go**
-* **Gin**
-* **PostgreSQL**
-* **go-migrate**
-* **Swagger (swaggo)**
-* **Docker**
-* Clean architecture (controllers → services → models)
-
----
-
-## 🗺️ **Future Enhancements**
-
-* Payment integration (Paymob)
-* Show endpoints (create/update showtimes)
-* Role-based permission system
+- **Go**
+- **Gin**
+- **PostgreSQL**
+- **go-migrate**
+- **Swagger (swaggo)**
+- **Docker**
+- Clean architecture (controllers → services → models)

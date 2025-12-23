@@ -40,30 +40,8 @@ func main() {
 		}
 	}
 
-	// setup structured logging (slog)
-	loggerOpts := &slog.HandlerOptions{}
-	if os.Getenv("ENVIRONMENT") == "DEVELOPMENT" || os.Getenv("ENVIRONMENT") == "TESTING" {
-		loggerOpts.Level = slog.LevelDebug
-	} else {
-		loggerOpts.Level = slog.LevelInfo
-	}
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
-	slog.SetDefault(logger)
-
-	var dsn string
-
-	if os.Getenv("DB_DSN") != "" {
-		dsn = os.Getenv("DB_DSN")
-	} else {
-		dsn = fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
-			os.Getenv("DB_USER"),
-			os.Getenv("DB_PASSWORD"),
-			os.Getenv("DB_HOST"),
-			os.Getenv("DB_PORT"),
-			os.Getenv("DB_DATABASE"),
-		)
-	}
+	setupLogger()
+	dsn := getDSN()
 
 	// Initialize controllers with dsn for Models
 	app, err := controllers.New(dsn)
@@ -82,4 +60,34 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func getDSN() string {
+	var dsn string
+
+	if os.Getenv("DB_DSN") != "" {
+		dsn = os.Getenv("DB_DSN")
+	} else {
+		dsn = fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
+			os.Getenv("DB_USER"),
+			os.Getenv("DB_PASSWORD"),
+			os.Getenv("DB_HOST"),
+			os.Getenv("DB_PORT"),
+			os.Getenv("DB_DATABASE"),
+		)
+	}
+	return dsn
+}
+
+func setupLogger() {
+	// setup structured logging (slog)
+	loggerOpts := &slog.HandlerOptions{}
+	if os.Getenv("ENVIRONMENT") == "DEVELOPMENT" || os.Getenv("ENVIRONMENT") == "TESTING" {
+		loggerOpts.Level = slog.LevelDebug
+	} else {
+		loggerOpts.Level = slog.LevelInfo
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
+	slog.SetDefault(logger)
 }
