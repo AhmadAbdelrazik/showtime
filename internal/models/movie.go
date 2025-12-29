@@ -98,9 +98,10 @@ func (m *MovieModel) Create(movie *Movie) error {
 }
 
 func (m *MovieModel) Find(id int) (*Movie, error) {
-	query := `SELECT title, director, release_year, duration, imdb_link, created_at, updated_at
+	query := `SELECT title, director, release_year, duration, imdb_link,
+	created_at, updated_at
 	FROM movies
-	WHERE id = $1`
+	WHERE id = $1 AND deleted_at IS NULL`
 
 	movie := &Movie{ID: id}
 
@@ -131,7 +132,7 @@ func (m *MovieModel) Update(movie *Movie) error {
 	query := `UPDATE movies
 	SET title = $1, director = $2, release_year = $3,
 	duration = $4, imdb_link = $5, updated_at = NOW()
-	WHERE id = $6 AND updated_at = $7
+	WHERE id = $6 AND updated_at = $7 AND deleted_at IS NULL
 	RETURNING updated_at`
 	args := []any{
 		movie.Title,
@@ -158,7 +159,7 @@ func (m *MovieModel) Update(movie *Movie) error {
 }
 
 func (m *MovieModel) Delete(id int) error {
-	query := `DELETE FROM movies WHERE id = $1`
+	query := `UPDATE movies SET deleted_at = NOW() WHERE id = $1`
 
 	result, err := m.db.Exec(query, id)
 	if err != nil {
@@ -222,7 +223,8 @@ func (f *MovieFilter) Validate(v *validator.Validator) {
 }
 
 func (f *MovieFilter) Build() (string, []any, error) {
-	q := sq.Select("id, title, director, release_year, duration, imdb_link, created_at, updated_at").From("movies")
+	q := sq.Select(`id, title, director, release_year, duration, imdb_link,
+		created_at, updated_at`).From("movies").Where("deleted_at IS NULL")
 
 	if f.Title != nil {
 		q = q.Where(sq.Expr(

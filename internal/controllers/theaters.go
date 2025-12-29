@@ -104,6 +104,11 @@ func (h *Application) createTheaterHandler(c *gin.Context) {
 
 	user := c.MustGet("user").(*models.User)
 
+	if !isManagerOrAdmin(user) {
+		httputil.NewError(c, http.StatusForbidden, errors.New("only managers or admins can create theaters"))
+		return
+	}
+
 	if err := c.ShouldBind(&input); err != nil {
 		v := validator.New()
 		input.Validate(v)
@@ -189,7 +194,7 @@ func (h *Application) updateTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	if theater.ManagerID != user.ID {
+	if !isTheaterManagerOrAdmin(user, theater) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
@@ -259,7 +264,7 @@ func (h *Application) deleteTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	if theater.ManagerID != user.ID {
+	if isTheaterManagerOrAdmin(user, theater) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,

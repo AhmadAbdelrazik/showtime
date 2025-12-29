@@ -81,7 +81,7 @@ func (m *ShowModel) Create(show *Show) error {
 	SELECT m.id, h.id, $4, $5
 	FROM movies AS m
 	JOIN halls AS h ON h.theater_id = $2 AND h.code = $3
-	WHERE m.id = $1
+	WHERE m.id = $1 AND h.deleted_at IS NULL
 	RETURNING id, created_at, updated_at
 	`
 
@@ -120,7 +120,7 @@ func (m *ShowModel) Find(id int) (*Show, error) {
 	JOIN movies AS m on m.id = s.movie_id
 	JOIN halls AS h on h.id = s.hall_id
 	JOIN theaters AS t on t.id = h.theater_id
-	WHERE s.id = $1`
+	WHERE s.id = $1 AND h.deleted_at IS NULL and t.deleted_at IS NULL`
 
 	show := &Show{
 		ID: id,
@@ -222,6 +222,8 @@ func (f *ShowFilter) Build() (string, []any, error) {
 		s.created_at, s.updated_at`).From(`shows AS s`).Join(`movies AS m on m.id =
 		s.movie_id`).Join(`halls AS h on h.id = s.hall_id`).Join(`theaters AS t on
 		t.id = h.theater_id`)
+
+	q = q.Where("h.deleted_at IS NULL").Where("t.deleted_at IS NULL")
 
 	if f.MovieTitle != nil {
 		q = q.Where(sq.Expr(

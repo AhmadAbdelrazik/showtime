@@ -113,7 +113,7 @@ func (m *TheaterModel) Find(id int) (*Theater, error) {
 	FROM theaters AS t
 	JOIN users AS u ON u.id = t.manager_id
 	LEFT JOIN halls AS h ON t.id = h.theater_id
-	WHERE t.id = $1`
+	WHERE t.id = $1 and t.deleted_at IS NULL`
 
 	rows, err := m.db.Query(query, id)
 	if err != nil {
@@ -192,7 +192,7 @@ func (m *TheaterModel) Find(id int) (*Theater, error) {
 func (m *TheaterModel) Update(theater *Theater) error {
 	query := `UPDATE theaters 
 	SET name = $1, city = $2, address = $3, updated_at = NOW()
-	WHERE id = $4 AND updated_at = $5
+	WHERE id = $4 AND updated_at = $5 AND deleted_at IS NULL
 	RETURNING updated_at`
 	args := []any{theater.Name, theater.City, theater.Address, theater.ID, theater.UpdatedAt}
 
@@ -211,19 +211,42 @@ func (m *TheaterModel) Update(theater *Theater) error {
 }
 
 func (m *TheaterModel) Delete(id int) error {
-	query := `DELETE FROM theaters WHERE id = $1`
-
-	result, err := m.db.Exec(query, id)
+	tx, err := m.db.Begin()
 	if err != nil {
 		slog.Error("SQL Database Failure", "error", err)
 		return err
 	}
 
+	query := `UPDATE theaters SET deleted_at = NOW() WHERE id = $1`
+
+	result, err := tx.Exec(query, id)
+	if err != nil {
+		tx.Rollback()
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	}
+
 	if rows, err := result.RowsAffected(); err != nil {
+		tx.Rollback()
 		slog.Error("SQL Database Failure", "error", err)
 		return err
 	} else if rows == 0 {
+		tx.Rollback()
 		return ErrNotFound
+	}
+
+	query = `UPDATE halls SET deleted_at = NOW() WHERE theater_id = $1`
+	result, err = tx.Exec(query, id)
+	if err != nil {
+		tx.Rollback()
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		tx.Rollback()
+		slog.Error("SQL Database Failure", "error", err)
+		return err
 	}
 
 	return nil
@@ -258,7 +281,8 @@ func (f *TheaterFilter) Validate(v *validator.Validator) {
 }
 
 func (f *TheaterFilter) Build() (string, []any, error) {
-	q := sq.Select("id, manager_id, name, city, address, created_at, updated_at").From("theaters")
+	q := sq.Select(`id, manager_id, name, city, address, created_at,
+		updated_at`).From("theaters").Where("deleted_at IS NULL")
 
 	if f.Name != nil {
 		q = q.Where(sq.Expr(

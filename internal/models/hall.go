@@ -95,9 +95,10 @@ func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to 
 	s.end_time, s.created_at, s.updated_at
 	FROM halls AS h
 	JOIN shows AS s on s.hall_id = h.id
-	JOIN thaeters AS t on h.theater_id = t.id
+	JOIN theaters AS t on h.theater_id = t.id
 	JOIN movies AS m on s.movie_id = m.id
-	WHERE h.theater_id = $1 AND h.code = $2 AND s.end_time >= $3 AND s.start_time <= $4`
+	WHERE h.theater_id = $1 AND h.code = $2 AND s.end_time >= $3
+	AND s.start_time <= $4 AND h.deleted_at IS NULL AND t.deleted_at IS NULL`
 
 	args := []any{theaterID, code, from, to}
 
@@ -193,9 +194,11 @@ func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) 
 	h.code, m.id, m.title, m.imdb_link, s.start_time,
 	s.end_time, s.created_at, s.updated_at
 	FROM halls AS h
+	JOIN theaters AS t on t.id = h.theater_id
 	JOIN shows AS s on s.hall_id = h.id
 	JOIN movies AS m on s.movie_id = m.id
-	WHERE h.id = $1 AND s.end_time >= $2 AND s.start_time <= $3`
+	WHERE h.id = $1 AND s.end_time >= $2 AND s.start_time <= $3 
+	AND h.deleted_at IS NULL AND t.deleted_at IS NULL`
 
 	rows, err := m.db.Query(query, id, from, to)
 	if err != nil {
@@ -286,7 +289,7 @@ func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) 
 func (m *HallModel) Update(hall *Hall) error {
 	query := `UPDATE halls
 	SET name = $1, code = $2, updated_at = NOW()
-	WHERE id = $3 AND updated_at = $4
+	WHERE id = $3 AND updated_at = $4 AND deleted_at IS NULL
 	RETURNING updated_at`
 	args := []any{hall.Name, hall.Code, hall.ID, hall.UpdatedAt}
 
@@ -307,7 +310,7 @@ func (m *HallModel) Update(hall *Hall) error {
 }
 
 func (m *HallModel) Delete(id int) error {
-	query := `DELETE FROM halls WHERE id = $1`
+	query := `UPDATE halls SET deleted_at = NOW() WHERE id = $1`
 
 	result, err := m.db.Exec(query, id)
 	if err != nil {
@@ -326,7 +329,7 @@ func (m *HallModel) Delete(id int) error {
 }
 
 func (m *HallModel) DeleteByCode(code string) error {
-	query := `DELETE FROM halls WHERE code = $1`
+	query := `UPDATE halls SET deleted_at = NOW() WHERE code = $1`
 
 	result, err := m.db.Exec(query, code)
 	if err != nil {
