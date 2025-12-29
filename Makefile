@@ -16,7 +16,7 @@ app-test:
 	@yes | migrate -path=./migrations -database=$(DB_DSN_TEST) down
 
 app-build:
-	go build -o server ./cmd/api
+	@go build -o server ./cmd/api
 
 app-run: app-build
 	./server
