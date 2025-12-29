@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
@@ -213,6 +214,7 @@ type SignupInput struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Name     string `json:"name"`
+	Role     string `json:"role"`
 	Password string `json:"password"`
 }
 
@@ -230,6 +232,11 @@ func (i SignupInput) Validate(v *validator.Validator) {
 
 	v.Check(len(strings.TrimSpace(i.Email)) > 0, "email", "required")
 	v.Check(validator.EmailRX.MatchString(i.Email), "email", "invalid email form")
+
+	roles := []string{"customer", "admin", "manager"}
+	v.Check(len(strings.TrimSpace(i.Role)) > 0, "role", "required")
+	v.Check(len(i.Role) <= 10, "role", "must be at most 10 characters")
+	v.Check(slices.Contains(roles, i.Role), "role", "invalid role. (must be customer, admin, or manager)")
 
 	v.Check(len(strings.TrimSpace(i.Password)) > 0, "password", "required")
 	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
