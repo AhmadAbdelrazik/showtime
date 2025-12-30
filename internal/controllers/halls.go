@@ -107,7 +107,7 @@ func (h *Application) createHallHandler(c *gin.Context) {
 	}
 
 	// check authorization
-	if theater.ManagerID != user.ID {
+	if !isTheaterManagerOrAdmin(user, theater) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
@@ -185,7 +185,7 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 	}
 
 	// check authorization
-	if hall.ManagerID != user.ID {
+	if !isHallManagerOrAdmin(user, hall) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
@@ -250,7 +250,7 @@ func (h *Application) deleteHallResponse(c *gin.Context) {
 		return
 	}
 
-	if theater.ManagerID != user.ID {
+	if !isTheaterManagerOrAdmin(user, theater) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,

@@ -106,7 +106,7 @@ func (h *Application) createShowHandler(c *gin.Context) {
 	}
 
 	// check authorization
-	if hall.ManagerID != user.ID {
+	if !isHallManagerOrAdmin(user, hall) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
@@ -245,7 +245,7 @@ func (h *Application) deleteShowHandler(c *gin.Context) {
 		return
 	}
 
-	if theater.ManagerID != user.ID {
+	if !isTheaterManagerOrAdmin(user, theater) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,

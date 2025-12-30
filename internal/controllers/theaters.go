@@ -264,7 +264,7 @@ func (h *Application) deleteTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	if isTheaterManagerOrAdmin(user, theater) {
+	if !isTheaterManagerOrAdmin(user, theater) {
 		httputil.NewError(
 			c,
 			http.StatusForbidden,
