@@ -80,6 +80,10 @@ func (s *UserService) Login(input LoginInput) (*models.User, error) {
 	return user, nil
 }
 
+func (s *UserService) FindById(userId int) (*models.User, error) {
+	return s.models.Users.Find(userId)
+}
+
 type SignupInput struct {
 	Username string
 	Email    string

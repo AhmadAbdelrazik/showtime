@@ -45,7 +45,7 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 
 		// Should never fail except if the account has been deleted or internal server error
 		slog.Debug("Fetching user from the database")
-		user, err := h.models.Users.Find(int(id))
+		user, err := h.services.Users.FindById(int(id))
 		if err != nil {
 			switch {
 			case errors.Is(err, models.ErrNotFound):
