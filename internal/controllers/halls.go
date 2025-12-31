@@ -8,6 +8,7 @@ import (
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
+	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
@@ -31,10 +32,10 @@ func (h *Application) getHallHandler(c *gin.Context) {
 	theaterID, err := strconv.ParseInt(theaterIdStr, 10, 32)
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
-
+		return
 	}
 
-	hall, err := h.models.Halls.FindByCode(int(theaterID), hallCode)
+	hall, err := h.services.Halls.Find(int(theaterID), hallCode)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -95,31 +96,13 @@ func (h *Application) createHallHandler(c *gin.Context) {
 	}
 
 	// fetch theater from db
-	theater, err := h.models.Theaters.Find(int(theaterID))
-	if err != nil {
+	if err := h.services.Halls.Create(user, hall, int(theaterID)); err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, err)
+		case errors.Is(err, services.ErrTheaterNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	// check authorization
-	if !isTheaterManagerOrAdmin(user, theater) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("creating halls is available for theater's manager only."),
-		)
-		return
-	}
-
-	// add hall
-	if err := h.models.Halls.Create(hall); err != nil {
-		switch {
-		case errors.Is(err, models.ErrDuplicate):
+		case errors.Is(err, services.ErrDuplicate):
 			httputil.NewError(c, http.StatusConflict, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
@@ -173,35 +156,14 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 	}
 
 	// add hall
-	hall, err := h.models.Halls.FindByCode(int(theaterID), hallCode)
+	hall, err := h.services.Halls.Update(user, int(theaterID), hallCode, services.UpdateHallInput(input))
 	if err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrHallNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	// check authorization
-	if !isHallManagerOrAdmin(user, hall) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("creating halls is available for theater's manager only."),
-		)
-		return
-	}
-
-	if input.Name != nil {
-		hall.Name = *input.Name
-	}
-
-	if err := h.models.Halls.Update(hall); err != nil {
-		switch {
-		case errors.Is(err, models.ErrEditConflict),
-			errors.Is(err, models.ErrDuplicate):
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, err)
+		case errors.Is(err, services.ErrEditConflict):
 			httputil.NewError(c, http.StatusConflict, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
@@ -233,35 +195,18 @@ func (h *Application) deleteHallResponse(c *gin.Context) {
 
 	hallCode := c.Param("code")
 	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 32)
+	theaterId, err := strconv.ParseInt(idStr, 10, 32)
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid parameter: (id must be integer)"))
 		return
 	}
 
-	theater, err := h.models.Theaters.Find(int(id))
-	if err != nil {
+	if err := h.services.Halls.Delete(user, int(theaterId), hallCode); err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
-			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	if !isTheaterManagerOrAdmin(user, theater) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("hall can be removed only by the theater manager"),
-		)
-		return
-	}
-
-	if err := h.models.Halls.DeleteByCode(hallCode); err != nil {
-		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, err)
+		case errors.Is(err, services.ErrHallNotFound),
+			errors.Is(err, services.ErrTheaterNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)

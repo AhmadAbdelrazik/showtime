@@ -3,16 +3,8 @@ package services
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
-	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
-)
-
-var (
-	ErrUnauthorized    = errors.New("unauthorized access")
-	ErrTheaterNotFound = errors.New("theater not found")
-	ErrEditConflict    = errors.New("edit conflict")
 )
 
 type TheaterService struct {
