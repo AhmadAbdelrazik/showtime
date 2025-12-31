@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
+	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
@@ -44,54 +44,22 @@ func (h *Application) userSignupHandler(c *gin.Context) {
 		return
 	}
 
-	user := &models.User{
-		Username: input.Username,
-		Email:    input.Email,
-		Name:     input.Name,
-	}
-
-	password, err := models.NewPassword(input.Password)
+	user, err := h.services.Users.Signup(services.SignupInput(input))
 	if err != nil {
-		httputil.NewError(c, http.StatusInternalServerError, err)
-		return
-	}
-
-	user.Password = password
-
-	// Add to database
-
-	if err := h.models.Users.Create(user); err != nil {
 		switch {
-		case errors.Is(err, models.ErrDuplicate):
+		case errors.Is(err, services.ErrInvalidUserRole):
+			v := validator.New()
+			v.AddError("role", err.Error())
+			httputil.NewValidationError(c, v.Errors)
+		case errors.Is(err, services.ErrDuplicate):
 			httputil.NewError(c, http.StatusConflict, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
 		}
 		return
 	}
-	slog.Info(
-		"user has been created successfully",
-		"username", user.Username,
-		"id", user.ID,
-		"email", user.Email,
-	)
 
-	sessionID := h.generateRandomString()
-	h.cache.Set(sessionID, fmt.Sprint(user.ID))
-
-	// session cookie
-	cookie := &http.Cookie{
-		Name:     "SESSION_ID",
-		Value:    sessionID,
-		Path:     "/",
-		MaxAge:   3600,
-		SameSite: http.SameSiteLaxMode,
-		Secure:   true,
-		HttpOnly: true,
-	}
-
-	http.SetCookie(c.Writer, cookie)
-
+	h.addAuthSessionId(user, c)
 	// Server Response
 
 	c.JSON(http.StatusCreated, SignupResponse{
@@ -130,10 +98,11 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := h.models.Users.FindByEmail(input.Email)
+	user, err := h.services.Users.Login(services.LoginInput(input))
 	if err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrUserNotFound),
+			errors.Is(err, services.ErrIncorrectPassword):
 			httputil.NewError(c, http.StatusForbidden, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
@@ -141,25 +110,7 @@ func (h *Application) userLoginHandler(c *gin.Context) {
 		return
 	}
 
-	if match := user.Password.ComparePassword(input.Password); !match {
-		httputil.NewError(c, http.StatusForbidden, err)
-		return
-	}
-
-	sessionID := h.generateRandomString()
-	h.cache.Set(sessionID, fmt.Sprint(user.ID))
-
-	// session cookie
-	cookie := &http.Cookie{
-		Name:     "SESSION_ID",
-		Value:    sessionID,
-		Path:     "/",
-		MaxAge:   3600,
-		SameSite: http.SameSiteLaxMode,
-		HttpOnly: true,
-	}
-
-	http.SetCookie(c.Writer, cookie)
+	h.addAuthSessionId(user, c)
 
 	// Server Response
 	c.JSON(http.StatusOK, LoginResponse{"logged in successfully"})
@@ -190,14 +141,10 @@ func (h *Application) userLogoutHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, LogoutResponse{"Logged out successfully"})
 }
 
-type LogoutResponse struct {
-	Message string `json:"message"`
-}
-
-// UserLogout godoc
+// UserDetailsHandler godoc
 //
-//	@Summary		User Logout
-//	@Description	Logout users from the system.
+//	@Summary		User Details
+//	@Description	Get details of the current user
 //	@Tags			auth
 //	@Produce		json
 //	@Success		200	{object}	models.User
@@ -208,6 +155,24 @@ func (a *Application) UserDetailsHandler(c *gin.Context) {
 	slog.Debug("retreived successfully")
 
 	c.JSON(http.StatusOK, user)
+}
+
+func (h *Application) addAuthSessionId(user *models.User, c *gin.Context) {
+	sessionID := h.generateRandomString()
+	h.cache.Set(sessionID, fmt.Sprint(user.ID))
+
+	// session cookie
+	cookie := &http.Cookie{
+		Name:     "SESSION_ID",
+		Value:    sessionID,
+		Path:     "/",
+		MaxAge:   3600,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   true,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(c.Writer, cookie)
 }
 
 type SignupInput struct {
@@ -233,10 +198,8 @@ func (i SignupInput) Validate(v *validator.Validator) {
 	v.Check(len(strings.TrimSpace(i.Email)) > 0, "email", "required")
 	v.Check(validator.EmailRX.MatchString(i.Email), "email", "invalid email form")
 
-	roles := []string{"customer", "admin", "manager"}
 	v.Check(len(strings.TrimSpace(i.Role)) > 0, "role", "required")
 	v.Check(len(i.Role) <= 10, "role", "must be at most 10 characters")
-	v.Check(slices.Contains(roles, i.Role), "role", "invalid role. (must be customer, admin, or manager)")
 
 	v.Check(len(strings.TrimSpace(i.Password)) > 0, "password", "required")
 	v.Check(len(i.Password) >= 8, "password", "must be at least 8 characters")
@@ -299,4 +262,8 @@ func (i LoginInput) Validate(v *validator.Validator) {
 		"password",
 		"must contain at least 1 special character ( !@#$%&* )",
 	)
+}
+
+type LogoutResponse struct {
+	Message string `json:"message"`
 }

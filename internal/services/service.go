@@ -8,6 +8,7 @@ import (
 
 var (
 	ErrUnauthorized    = errors.New("unauthorized access")
+	ErrUserNotFound    = errors.New("user not found")
 	ErrTheaterNotFound = errors.New("theater not found")
 	ErrHallNotFound    = errors.New("hall not found")
 	ErrMovieNotFound   = errors.New("movie not found")
@@ -18,8 +19,9 @@ var (
 
 type Service struct {
 	Theaters *TheaterService
-	Halls    *HallService
 	Shows    *ShowService
+	Halls    *HallService
+	Users    *UserService
 }
 
 func New(model *models.Model) *Service {
@@ -28,5 +30,6 @@ func New(model *models.Model) *Service {
 		Theaters: &TheaterService{model},
 		Shows:    &ShowService{model},
 		Halls:    &HallService{model},
+		Users:    &UserService{model},
 	}
 }
