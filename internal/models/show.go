@@ -102,7 +102,7 @@ func (m *ShowModel) Create(show *Show) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return fmt.Errorf("%w: check if movie and hall exists", ErrNotFound)
+			return fmt.Errorf("%w: movie or hall not found", ErrNotFound)
 		default:
 			slog.Error("SQL Database Failure", "error", err)
 			return err

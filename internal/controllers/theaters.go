@@ -65,14 +65,12 @@ func (h *Application) searchTheatersHandler(c *gin.Context) {
 //	@Failure		500	{object}	httputil.HTTPError
 //	@Router			/api/theaters/{id} [get]
 func (h *Application) getTheaterHandler(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid parameter: (id must be integer)"))
-		return
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
 	}
 
-	theater, err := h.services.Theaters.Find(int(id))
+	theater, err := h.services.Theaters.Find(int(theaterId))
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -162,11 +160,9 @@ func (h *Application) createTheaterHandler(c *gin.Context) {
 func (h *Application) updateTheaterHandler(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid parameter: (id must be integer)"))
-		return
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
 	}
 
 	var input UpdateTheaterInput
@@ -184,7 +180,7 @@ func (h *Application) updateTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	theater, err := h.services.Theaters.Update(user, int(id), services.UpdateTheaterInput(input))
+	theater, err := h.services.Theaters.Update(user, int(theaterId), services.UpdateTheaterInput(input))
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrUnauthorized):
@@ -222,14 +218,12 @@ func (h *Application) updateTheaterHandler(c *gin.Context) {
 func (h *Application) deleteTheaterHandler(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid parameter: (id must be integer)"))
-		return
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
 	}
 
-	if err := h.services.Theaters.Delete(user, int(id)); err != nil {
+	if err := h.services.Theaters.Delete(user, int(theaterId)); err != nil {
 		switch {
 		case errors.Is(err, services.ErrUnauthorized):
 			httputil.NewError(c, http.StatusForbidden, err)

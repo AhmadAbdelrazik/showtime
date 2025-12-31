@@ -28,14 +28,12 @@ import (
 //	@Router			/api/theaters/{id}/halls/{code} [get]
 func (h *Application) getHallHandler(c *gin.Context) {
 	hallCode := c.Param("code")
-	theaterIdStr := c.Param("id")
-	theaterID, err := strconv.ParseInt(theaterIdStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
-		return
 	}
 
-	hall, err := h.services.Halls.Find(int(theaterID), hallCode)
+	hall, err := h.services.Halls.Find(int(theaterId), hallCode)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -68,11 +66,9 @@ func (h *Application) createHallHandler(c *gin.Context) {
 	// parse input (parameter + body)
 	var input CreateHallInput
 
-	theaterIdStr := c.Param("id")
-	theaterID, err := strconv.ParseInt(theaterIdStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
-
 	}
 
 	user := c.MustGet("user").(*models.User)
@@ -90,13 +86,13 @@ func (h *Application) createHallHandler(c *gin.Context) {
 	}
 
 	hall := &models.Hall{
-		TheaterID: int(theaterID),
+		TheaterID: int(theaterId),
 		Name:      input.Name,
 		Code:      input.Code,
 	}
 
 	// fetch theater from db
-	if err := h.services.Halls.Create(user, hall, int(theaterID)); err != nil {
+	if err := h.services.Halls.Create(user, hall, int(theaterId)); err != nil {
 		switch {
 		case errors.Is(err, services.ErrUnauthorized):
 			httputil.NewError(c, http.StatusForbidden, err)
@@ -134,11 +130,9 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 	var input UpdateHallInput
 
 	hallCode := c.Param("code")
-	theaterIdStr := c.Param("id")
-	theaterID, err := strconv.ParseInt(theaterIdStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
-
 	}
 
 	user := c.MustGet("user").(*models.User)
@@ -156,7 +150,7 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 	}
 
 	// add hall
-	hall, err := h.services.Halls.Update(user, int(theaterID), hallCode, services.UpdateHallInput(input))
+	hall, err := h.services.Halls.Update(user, int(theaterId), hallCode, services.UpdateHallInput(input))
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrHallNotFound):
@@ -194,11 +188,9 @@ func (h *Application) deleteHallResponse(c *gin.Context) {
 	user := c.MustGet("user").(*models.User)
 
 	hallCode := c.Param("code")
-	idStr := c.Param("id")
-	theaterId, err := strconv.ParseInt(idStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid parameter: (id must be integer)"))
-		return
+		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
 	}
 
 	if err := h.services.Halls.Delete(user, int(theaterId), hallCode); err != nil {

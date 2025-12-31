@@ -10,6 +10,7 @@ import (
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
+	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
@@ -46,7 +47,7 @@ func (h *Application) searchShowsHandler(c *gin.Context) {
 		return
 	}
 
-	shows, err := h.models.Shows.Search(filters)
+	shows, err := h.services.Shows.Search(filters)
 	if err != nil {
 		httputil.NewError(c, http.StatusInternalServerError, err)
 		return
@@ -73,12 +74,11 @@ func (h *Application) searchShowsHandler(c *gin.Context) {
 func (h *Application) createShowHandler(c *gin.Context) {
 	var input CreateShowInput
 
-	theaterIdStr := c.Param("id")
-	theaterID, err := strconv.ParseInt(theaterIdStr, 10, 32)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
-
 	}
+
 	user := c.MustGet("user").(*models.User)
 
 	if err := c.ShouldBind(&input); err != nil {
@@ -94,62 +94,17 @@ func (h *Application) createShowHandler(c *gin.Context) {
 		return
 	}
 
-	hall, err := h.models.Halls.FindByCode(int(theaterID), input.HallCode)
-	if err != nil {
+	if err := h.services.Shows.Create(user, int(theaterId), services.CreateShowInput(input)); err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrHallNotFound),
+			errors.Is(err, services.ErrMovieNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	// check authorization
-	if !isHallManagerOrAdmin(user, hall) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("creating shows is available for theater's manager only."),
-		)
-		return
-	}
-
-	movie, err := h.models.Movies.Find(input.MovieID)
-	if err != nil {
-		switch {
-		case errors.Is(err, models.ErrNotFound):
-			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	movieDuration, err := time.ParseDuration(movie.Duration)
-	if err != nil {
-		panic(err)
-	}
-
-	if input.EndTime.Sub(input.StartTime) < movieDuration {
-		v := validator.New()
-		v.AddError("duration", fmt.Sprintf("movie duration (%v) is longer than reserved time", movie.Duration))
-		httputil.NewValidationError(c, v.Errors)
-		return
-	}
-
-	show := &models.Show{
-		MovieID:   movie.ID,
-		TheaterID: hall.TheaterID,
-		HallCode:  input.HallCode,
-		StartTime: input.StartTime,
-		EndTime:   input.EndTime,
-	}
-
-	if err := h.models.Shows.Create(show); err != nil {
-		switch {
-		case errors.Is(err, models.ErrNotFound):
-			httputil.NewError(c, http.StatusNotFound, err)
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, err)
+		case errors.Is(err, services.ErrInvalidShowDuration):
+			v := validator.New()
+			v.AddError("duration", err.Error())
+			httputil.NewValidationError(c, v.Errors)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
 		}
@@ -175,30 +130,23 @@ func (h *Application) createShowHandler(c *gin.Context) {
 //	@Failure		500	{object}	httputil.HTTPError
 //	@Router			/api/theaters/{id}/shows/{show_id} [get]
 func (h *Application) getShowHandler(c *gin.Context) {
-	theaterIdStr := c.Param("id")
-	theaterID, err := strconv.Atoi(theaterIdStr)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
 	}
-	showIdStr := c.Param("showId")
-	showId, err := strconv.Atoi(showIdStr)
+	showId, err := strconv.Atoi(c.Param("showId"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid show id"))
 	}
 
-	show, err := h.models.Shows.Find(showId)
+	show, err := h.services.Shows.Find(theaterId, showId)
 	if err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrShowNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
 		}
-		return
-	}
-
-	if show.TheaterID != theaterID {
-		httputil.NewError(c, http.StatusNotFound, err)
 		return
 	}
 
@@ -221,42 +169,24 @@ func (h *Application) getShowHandler(c *gin.Context) {
 //	@Failure		500	{object}	httputil.HTTPError
 //	@Router			/api/theaters/{id}/shows/{show_id} [delete]
 func (h *Application) deleteShowHandler(c *gin.Context) {
-	theaterIdStr := c.Param("id")
-	theaterID, err := strconv.Atoi(theaterIdStr)
+	theaterId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid theater id"))
 	}
-	showIdStr := c.Param("showId")
-	showId, err := strconv.Atoi(showIdStr)
+
+	showId, err := strconv.Atoi(c.Param("showId"))
 	if err != nil {
 		httputil.NewError(c, http.StatusBadRequest, errors.New("invalid show id"))
 	}
 
 	user := c.MustGet("user").(*models.User)
 
-	theater, err := h.models.Theaters.Find(int(theaterID))
-	if err != nil {
+	if err := h.services.Shows.Delete(user, theaterId, showId); err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
-			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	if !isTheaterManagerOrAdmin(user, theater) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("deleting shows is available for theater's manager only."),
-		)
-		return
-	}
-
-	if err := h.models.Shows.Delete(showId); err != nil {
-		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusConflict, err)
+		case errors.Is(err, services.ErrTheaterNotFound),
+			errors.Is(err, services.ErrShowNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
