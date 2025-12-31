@@ -4,12 +4,13 @@ import (
 	"log/slog"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
+	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/AhmadAbdelrazik/showtime/pkg/cache"
 )
 
 type Application struct {
-	models *models.Model
-	cache  *cache.Cache
+	services *services.Service
+	cache    *cache.Cache
 }
 
 func New(dsn string) (*Application, error) {
@@ -20,7 +21,7 @@ func New(dsn string) (*Application, error) {
 	}
 
 	return &Application{
-		models: model,
-		cache:  cache.New(),
+		services: services.New(model),
+		cache:    cache.New(),
 	}, nil
 }

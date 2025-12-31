@@ -8,6 +8,7 @@ import (
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
+	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/AhmadAbdelrazik/showtime/pkg/validator"
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +43,7 @@ func (h *Application) searchTheatersHandler(c *gin.Context) {
 		return
 	}
 
-	theaters, err := h.models.Theaters.Search(filters)
+	theaters, err := h.services.Theaters.Search(filters)
 	if err != nil {
 		httputil.NewError(c, http.StatusInternalServerError, err)
 		return
@@ -71,7 +72,7 @@ func (h *Application) getTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	theater, err := h.models.Theaters.Find(int(id))
+	theater, err := h.services.Theaters.Find(int(id))
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
@@ -104,11 +105,6 @@ func (h *Application) createTheaterHandler(c *gin.Context) {
 
 	user := c.MustGet("user").(*models.User)
 
-	if !isManagerOrAdmin(user) {
-		httputil.NewError(c, http.StatusForbidden, errors.New("only managers or admins can create theaters"))
-		return
-	}
-
 	if err := c.ShouldBind(&input); err != nil {
 		v := validator.New()
 		input.Validate(v)
@@ -130,8 +126,13 @@ func (h *Application) createTheaterHandler(c *gin.Context) {
 		Halls:     []models.Hall{},
 	}
 
-	if err := h.models.Theaters.Create(theater); err != nil {
-		httputil.NewError(c, http.StatusInternalServerError, err)
+	if err := h.services.Theaters.Create(user, theater); err != nil {
+		switch {
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, errors.New("only managers or admins can create theaters"))
+		default:
+			httputil.NewError(c, http.StatusInternalServerError, err)
+		}
 		return
 	}
 
@@ -183,39 +184,14 @@ func (h *Application) updateTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	theater, err := h.models.Theaters.Find(int(id))
+	theater, err := h.services.Theaters.Update(user, int(id), services.UpdateTheaterInput(input))
 	if err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, err)
+		case errors.Is(err, services.ErrTheaterNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
-		default:
-			httputil.NewError(c, http.StatusInternalServerError, err)
-		}
-		return
-	}
-
-	if !isTheaterManagerOrAdmin(user, theater) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("theater info can be updated by theater manager only"),
-		)
-		return
-	}
-
-	if input.Name != nil {
-		theater.Name = *input.Name
-	}
-	if input.City != nil {
-		theater.City = *input.City
-	}
-	if input.Address != nil {
-		theater.Address = *input.Address
-	}
-
-	if err := h.models.Theaters.Update(theater); err != nil {
-		switch {
-		case errors.Is(err, models.ErrEditConflict):
+		case errors.Is(err, services.ErrEditConflict):
 			httputil.NewError(c, http.StatusConflict, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
@@ -253,28 +229,15 @@ func (h *Application) deleteTheaterHandler(c *gin.Context) {
 		return
 	}
 
-	theater, err := h.models.Theaters.Find(int(id))
-	if err != nil {
+	if err := h.services.Theaters.Delete(user, int(id)); err != nil {
 		switch {
-		case errors.Is(err, models.ErrNotFound):
+		case errors.Is(err, services.ErrUnauthorized):
+			httputil.NewError(c, http.StatusForbidden, err)
+		case errors.Is(err, services.ErrTheaterNotFound):
 			httputil.NewError(c, http.StatusNotFound, err)
 		default:
 			httputil.NewError(c, http.StatusInternalServerError, err)
 		}
-		return
-	}
-
-	if !isTheaterManagerOrAdmin(user, theater) {
-		httputil.NewError(
-			c,
-			http.StatusForbidden,
-			errors.New("theater can be deleted by theater manager only"),
-		)
-		return
-	}
-
-	if err := h.models.Theaters.Delete(int(id)); err != nil {
-		httputil.NewError(c, http.StatusInternalServerError, err)
 		return
 	}
 
