@@ -22,14 +22,16 @@ type Service struct {
 	Shows    *ShowService
 	Halls    *HallService
 	Users    *UserService
+	Movies   *MovieService
 }
 
-func New(model *models.Model) *Service {
+func New(model *models.Model, movieProvider MovieProvider) *Service {
 
 	return &Service{
 		Theaters: &TheaterService{model},
 		Shows:    &ShowService{model},
 		Halls:    &HallService{model},
 		Users:    &UserService{model},
+		Movies:   &MovieService{model, movieProvider},
 	}
 }
