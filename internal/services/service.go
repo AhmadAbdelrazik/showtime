@@ -27,11 +27,13 @@ type Service struct {
 
 func New(model *models.Model, movieProvider MovieProvider) *Service {
 
+	movieService := &MovieService{model, movieProvider}
+
 	return &Service{
 		Theaters: &TheaterService{model},
-		Shows:    &ShowService{model},
+		Shows:    &ShowService{model, movieService},
 		Halls:    &HallService{model},
 		Users:    &UserService{model},
-		Movies:   &MovieService{model, movieProvider},
+		Movies:   movieService,
 	}
 }

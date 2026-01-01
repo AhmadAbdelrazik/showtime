@@ -13,7 +13,8 @@ var (
 )
 
 type ShowService struct {
-	models *models.Model
+	models       *models.Model
+	movieService *MovieService
 }
 
 func (s *ShowService) Search(filters models.ShowFilter) ([]models.Show, error) {
@@ -36,7 +37,7 @@ func (s *ShowService) Create(user *models.User, theaterId int, input CreateShowI
 		return fmt.Errorf("%w: creating shows is available for theater's manager only.", ErrUnauthorized)
 	}
 
-	movie, err := s.models.Movies.Find(input.MovieID)
+	movie, err := s.movieService.Find(input.MovieID)
 	if err != nil {
 		switch {
 		case errors.Is(err, models.ErrNotFound):
