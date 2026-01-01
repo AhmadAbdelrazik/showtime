@@ -1,6 +1,6 @@
 package omdb
 
-type MovieResponse struct {
+type movieResponse struct {
 	Title    string `json:"Title"`
 	Year     string `json:"Year"`
 	Rated    string `json:"Rated"`

@@ -12,6 +12,5 @@ type MovieService struct {
 }
 
 type MovieProvider interface {
-	Find(ctx context.Context, movieId string) (*models.Movie, error)
-	Search(ctx context.Context, movieName string) ([]models.Movie, error)
+	GetMovie(ctx context.Context, movieId string) (*models.Movie, error)
 }
