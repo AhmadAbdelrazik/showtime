@@ -10,6 +10,9 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/controllers"
+	"github.com/AhmadAbdelrazik/showtime/internal/infrastructure/omdb"
+	"github.com/AhmadAbdelrazik/showtime/internal/models"
+	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
@@ -42,9 +45,7 @@ func main() {
 
 	setupLogger()
 	dsn := getDSN()
-
-	// Initialize controllers with dsn for Models
-	app, err := controllers.New(dsn)
+	app, err := setupApplication(dsn, os.Getenv("OMDB_APIKEY"))
 	if err != nil {
 		log.Fatal("Error Loading Controller" + err.Error())
 	}
@@ -90,4 +91,17 @@ func setupLogger() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
 	slog.SetDefault(logger)
+}
+
+func setupApplication(dsn, omdbApiKey string) (*controllers.Application, error) {
+	models, err := models.New(dsn)
+	if err != nil {
+		slog.Error("failed to create model", slog.String("error", err.Error()))
+		return nil, err
+	}
+
+	omdbClient := omdb.NewClient(omdbApiKey)
+	service := services.New(models, omdbClient)
+
+	return controllers.New(service)
 }
