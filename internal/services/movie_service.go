@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -36,4 +37,21 @@ func (s *MovieService) Find(movieId string) (*models.Movie, error) {
 
 func (s *MovieService) Search(title, year string) ([]models.Movie, error) {
 	return s.provider.Search(context.Background(), title, year)
+}
+
+func (s *MovieService) Delete(user *models.User, movieId string) error {
+	if user.Role != "admin" {
+		return fmt.Errorf("%w: you have to be an admin", ErrUnauthorized)
+	}
+
+	if err := s.models.Movies.Delete(movieId); err != nil {
+		switch {
+		case errors.Is(err, models.ErrNotFound):
+			return ErrMovieNotFound
+		default:
+			return err
+		}
+	}
+
+	return nil
 }

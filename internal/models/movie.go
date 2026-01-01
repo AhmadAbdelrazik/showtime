@@ -91,3 +91,22 @@ func (m *MovieModel) Find(imdbId string) (*Movie, error) {
 
 	return movie, nil
 }
+
+func (m *MovieModel) Delete(imdbId string) error {
+	query := `DELETE FROM movies WHERE imdb_id = $1`
+
+	result, err := m.db.Exec(query, imdbId)
+	if err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	}
+
+	if rows, err := result.RowsAffected(); err != nil {
+		slog.Error("SQL Database Failure", "error", err)
+		return err
+	} else if rows == 0 {
+		return ErrNotFound
+	}
+
+	return nil
+}

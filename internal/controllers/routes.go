@@ -34,8 +34,6 @@ func (a *Application) Routes(r *gin.Engine) {
 	api.GET("/movies", a.searchMoviesHandler)
 	api.GET("/movies/:id", a.getMovieHandler)
 
-	auth.POST("/movies", a.createMovieHandler)
-	auth.PATCH("/movies/:id", a.updateMovieHandler)
 	auth.DELETE("/movies/:id", a.deleteMovieHandler)
 
 	// shows
