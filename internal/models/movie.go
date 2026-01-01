@@ -14,14 +14,17 @@ import (
 )
 
 type Movie struct {
-	ID          int       `json:"id"`
-	Title       string    `json:"title"`
-	Director    string    `json:"director"`
-	ReleaseYear int       `json:"release_year"`
-	Duration    string    `json:"duration"`
-	IMDBLink    string    `json:"imdb_link"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ImdbID     string    `json:"imdbID"`
+	Title      string    `json:"Title"`
+	Year       string    `json:"Year"`
+	Rated      string    `json:"Rated"`
+	Runtime    string    `json:"Runtime"`
+	Genre      string    `json:"Genre"`
+	Director   string    `json:"Director"`
+	Poster     string    `json:"Poster"`
+	ImdbRating string    `json:"imdbRating"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 type MovieModel struct {
@@ -46,12 +49,14 @@ func (m *MovieModel) Search(f MovieFilter) ([]Movie, error) {
 	for rows.Next() {
 		var m Movie
 		err := rows.Scan(
-			&m.ID,
+			&m.ImdbID,
 			&m.Title,
+			&m.Year,
+			&m.Rated,
+			&m.Runtime,
+			&m.Genre,
 			&m.Director,
-			&m.ReleaseYear,
-			&m.Duration,
-			&m.IMDBLink,
+			&m.Poster,
 			&m.CreatedAt,
 			&m.UpdatedAt,
 		)
@@ -178,12 +183,11 @@ func (m *MovieModel) Delete(id int) error {
 }
 
 type MovieFilter struct {
-	Title       *string `form:"title"`
-	Director    *string `form:"director"`
-	ReleaseYear *int    `form:"release_year"`
-	SortBy      *string `form:"sort_by"`
-	Limit       *uint   `form:"limit"`
-	Offset      *uint   `form:"offset"`
+	Title  *string `form:"title"`
+	Year   *int    `form:"year"`
+	SortBy *string `form:"sort_by"`
+	Limit  *uint   `form:"limit"`
+	Offset *uint   `form:"offset"`
 }
 
 func (f *MovieFilter) Validate(v *validator.Validator) {
@@ -191,10 +195,8 @@ func (f *MovieFilter) Validate(v *validator.Validator) {
 		validSortValues := []string{
 			"title",
 			"-title",
-			"release_year",
-			"-release_year",
-			"director",
-			"-director",
+			"year",
+			"-year",
 		}
 		sort := *f.SortBy
 		v.Check(slices.Contains(validSortValues, sort), "sort", "invalid sort value")
@@ -208,12 +210,8 @@ func (f *MovieFilter) Validate(v *validator.Validator) {
 		v.Check(len(*f.Title) <= 100, "title", "must be at most 100 characters")
 	}
 
-	if f.Director != nil {
-		v.Check(len(*f.Director) <= 50, "director", "must be at most 50 characters")
-	}
-
-	if f.ReleaseYear != nil {
-		year := *f.ReleaseYear
+	if f.Year != nil {
+		year := *f.Year
 		v.Check(
 			year >= 1900 && year <= time.Now().Year(),
 			"release_year",
@@ -223,7 +221,7 @@ func (f *MovieFilter) Validate(v *validator.Validator) {
 }
 
 func (f *MovieFilter) Build() (string, []any, error) {
-	q := sq.Select(`id, title, director, release_year, duration, imdb_link,
+	q := sq.Select(`imdb_id, title, year, rated, runtime, genre, director, poster
 		created_at, updated_at`).From("movies").Where("deleted_at IS NULL")
 
 	if f.Title != nil {
@@ -233,15 +231,8 @@ func (f *MovieFilter) Build() (string, []any, error) {
 		))
 	}
 
-	if f.Director != nil {
-		q = q.Where(sq.Expr(
-			"to_tsvector('english', director) @@ plainto_tsquery('english', ?)",
-			*f.Director,
-		))
-	}
-
-	if f.ReleaseYear != nil {
-		q = q.Where(sq.Eq{"release_year": *f.ReleaseYear})
+	if f.Year != nil {
+		q = q.Where(sq.Eq{"release_year": *f.Year})
 	}
 
 	if f.SortBy != nil {
