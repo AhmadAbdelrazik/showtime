@@ -33,3 +33,7 @@ func (s *MovieService) Find(movieId string) (*models.Movie, error) {
 
 	return movie, nil
 }
+
+func (s *MovieService) Search(title, year string) ([]models.Movie, error) {
+	return s.provider.Search(context.Background(), title, year)
+}
