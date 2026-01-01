@@ -63,18 +63,53 @@ func (c *Client) GetMovie(_ context.Context, movieId string) (*models.Movie, err
 
 	return nil, errors.New("unknown response shape")
 }
+
+func (c *Client) Search(_ context.Context, title, year string) ([]models.Movie, error) {
+	url := fmt.Sprintf("http://www.omdbapi.com/?apikey=%s&s=%v", c.apiKey, title)
+
+	if year != "" {
+		url += fmt.Sprintf("&y=%v", year)
+	}
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var raw json.RawMessage
+
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
 		return nil, err
 	}
 
-	return &models.Movie{
-		ImdbID:     input.ImdbID,
-		Title:      input.Title,
-		Year:       input.Year,
-		Rated:      input.Rated,
-		Runtime:    input.Runtime,
-		Genre:      input.Genre,
-		Director:   input.Director,
-		Poster:     input.Poster,
-		ImdbRating: input.ImdbRating,
-	}, nil
+	var success searchSuccessResponse
+	if err := json.Unmarshal(raw, &success); err == nil && success.Response == "True" {
+		movies := make([]models.Movie, len(success.Search))
+
+		for i, m := range success.Search {
+			movies[i] = models.Movie{
+				ImdbID: m.ImdbID,
+				Title:  m.Title,
+				Year:   m.Year,
+				Poster: m.Poster,
+			}
+		}
+
+		return movies, nil
+	}
+
+	var error errorResponse
+	if err := json.Unmarshal(raw, &error); err == nil && success.Response == "False" {
+		switch error.Error {
+		case "Incorrect IMDb ID.":
+			return nil, services.ErrInvalidMovieId
+		case "Movie not found":
+			return nil, services.ErrMovieNotFound
+		default:
+			return nil, errors.New(error.Error)
+		}
+	}
+
+	return nil, errors.New("unknown response shape")
 }

@@ -1,6 +1,6 @@
 package omdb
 
-type movieResponse struct {
+type findSuccessResponse struct {
 	Title    string `json:"Title"`
 	Year     string `json:"Year"`
 	Rated    string `json:"Rated"`
@@ -29,4 +29,21 @@ type movieResponse struct {
 	Production string `json:"Production"`
 	Website    string `json:"Website"`
 	Response   string `json:"Response"`
+}
+
+type searchSuccessResponse struct {
+	Search []struct {
+		Title  string `json:"Title"`
+		Year   string `json:"Year"`
+		ImdbID string `json:"imdbID"`
+		Type   string `json:"Type"`
+		Poster string `json:"Poster"`
+	} `json:"Search"`
+	TotalResults string `json:"totalResults"`
+	Response     string `json:"Response"`
+}
+
+type errorResponse struct {
+	Response string `json:"Response"`
+	Error    string `json:"Error"`
 }
