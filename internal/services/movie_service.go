@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 )
@@ -11,6 +13,4 @@ type MovieService struct {
 	provider MovieProvider
 }
 
-type MovieProvider interface {
-	GetMovie(ctx context.Context, movieId string) (*models.Movie, error)
 }
