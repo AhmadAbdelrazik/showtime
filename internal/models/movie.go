@@ -14,15 +14,15 @@ import (
 )
 
 type Movie struct {
-	ImdbID     string    `json:"imdbID"`
-	Title      string    `json:"Title"`
-	Year       string    `json:"Year"`
-	Rated      string    `json:"Rated"`
-	Runtime    string    `json:"Runtime"`
-	Genre      string    `json:"Genre"`
-	Director   string    `json:"Director"`
-	Poster     string    `json:"Poster"`
-	ImdbRating string    `json:"imdbRating"`
+	ImdbID     string    `json:"imdb_id"`
+	Title      string    `json:"title"`
+	Year       string    `json:"year"`
+	Rated      string    `json:"rated"`
+	Runtime    string    `json:"runtime"`
+	Genre      string    `json:"genre"`
+	Director   string    `json:"director"`
+	Poster     string    `json:"poster"`
+	ImdbRating string    `json:"imdb_rating"`
 	CreatedAt  time.Time `json:"created_at"`
 	UpdatedAt  time.Time `json:"updated_at"`
 }
@@ -78,21 +78,29 @@ func (m *MovieModel) Search(f MovieFilter) ([]Movie, error) {
 }
 
 func (m *MovieModel) Create(movie *Movie) error {
-	query := `INSERT INTO movies(title, director, release_year, duration, imdb_link)
-	VALUES ($1, $2, $3, $4, $5)
-	RETURNING id, created_at, updated_at`
-	args := []any{movie.Title, movie.Director, movie.ReleaseYear, movie.Duration, movie.IMDBLink}
+	query := `INSERT INTO movies(imdb_id, title, year, rated, runtime, director, poster, imdb_rating)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	RETURNING created_at, updated_at`
+	args := []any{
+		movie.ImdbID,
+		movie.Title,
+		movie.Year,
+		movie.Rated,
+		movie.Runtime,
+		movie.Director,
+		movie.Poster,
+		movie.ImdbRating,
+	}
 
 	err := m.db.QueryRow(query, args...).Scan(
-		&movie.ID,
 		&movie.CreatedAt,
 		&movie.UpdatedAt,
 	)
 
 	if err != nil {
 		switch {
-		case strings.Contains(err.Error(), "movies_title_release_year_key"):
-			return fmt.Errorf("%w: movie with the same title and release year already exists", ErrDuplicate)
+		case strings.Contains(err.Error(), "movies_pkey"):
+			return ErrDuplicate
 		default:
 			slog.Error("SQL Database Failure", "error", err)
 			return err
@@ -102,20 +110,22 @@ func (m *MovieModel) Create(movie *Movie) error {
 	return nil
 }
 
-func (m *MovieModel) Find(id int) (*Movie, error) {
-	query := `SELECT title, director, release_year, duration, imdb_link,
-	created_at, updated_at
+func (m *MovieModel) Find(imdbId string) (*Movie, error) {
+	query := `SELECT title, year, rated, runtime, genre, director,
+	poster created_at, updated_at
 	FROM movies
-	WHERE id = $1 AND deleted_at IS NULL`
+	WHERE imdb_id = $1 AND deleted_at IS NULL`
 
-	movie := &Movie{ID: id}
+	movie := &Movie{ImdbID: imdbId}
 
-	err := m.db.QueryRow(query, id).Scan(
+	err := m.db.QueryRow(query, imdbId).Scan(
 		&movie.Title,
+		&movie.Year,
+		&movie.Rated,
+		&movie.Runtime,
+		&movie.Genre,
 		&movie.Director,
-		&movie.ReleaseYear,
-		&movie.Duration,
-		&movie.IMDBLink,
+		&movie.Poster,
 		&movie.CreatedAt,
 		&movie.UpdatedAt,
 	)
@@ -133,40 +143,10 @@ func (m *MovieModel) Find(id int) (*Movie, error) {
 	return movie, nil
 }
 
-func (m *MovieModel) Update(movie *Movie) error {
-	query := `UPDATE movies
-	SET title = $1, director = $2, release_year = $3,
-	duration = $4, imdb_link = $5, updated_at = NOW()
-	WHERE id = $6 AND updated_at = $7 AND deleted_at IS NULL
-	RETURNING updated_at`
-	args := []any{
-		movie.Title,
-		movie.Director,
-		movie.ReleaseYear,
-		movie.Duration,
-		movie.IMDBLink,
-		movie.ID,
-		movie.UpdatedAt,
-	}
+func (m *MovieModel) Delete(imdbId string) error {
+	query := `UPDATE movies SET deleted_at = NOW() WHERE imdb_id = $1`
 
-	err := m.db.QueryRow(query, args...).Scan(&movie.UpdatedAt)
-	if err != nil {
-		switch {
-		case errors.Is(err, sql.ErrNoRows):
-			return ErrEditConflict
-		default:
-			slog.Error("SQL Database Failure", "error", err)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *MovieModel) Delete(id int) error {
-	query := `UPDATE movies SET deleted_at = NOW() WHERE id = $1`
-
-	result, err := m.db.Exec(query, id)
+	result, err := m.db.Exec(query, imdbId)
 	if err != nil {
 		slog.Error("SQL Database Failure", "error", err)
 		return err

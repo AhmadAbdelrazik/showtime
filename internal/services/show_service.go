@@ -46,17 +46,17 @@ func (s *ShowService) Create(user *models.User, theaterId int, input CreateShowI
 		}
 	}
 
-	movieDuration, err := time.ParseDuration(movie.Duration)
+	movieDuration, err := time.ParseDuration(movie.Runtime)
 	if err != nil {
 		panic(err)
 	}
 
 	if input.EndTime.Sub(input.StartTime) < movieDuration {
-		return fmt.Errorf("%w (duration = %v)", ErrInvalidShowDuration, movie.Duration)
+		return fmt.Errorf("%w (duration = %v)", ErrInvalidShowDuration, movie.Runtime)
 	}
 
 	show := &models.Show{
-		MovieID:   movie.ID,
+		MovieID:   movie.ImdbID,
 		TheaterID: hall.TheaterID,
 		HallCode:  input.HallCode,
 		StartTime: input.StartTime,
@@ -112,7 +112,7 @@ func (s *ShowService) Delete(user *models.User, theaterId, showId int) error {
 }
 
 type CreateShowInput struct {
-	MovieID   int
+	MovieID   string
 	HallCode  string
 	StartTime time.Time
 	EndTime   time.Time

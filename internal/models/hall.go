@@ -123,7 +123,7 @@ func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to 
 		TheaterID     sql.NullInt32
 		HallID        sql.NullInt32
 		HallCode      sql.NullString
-		MovieID       sql.NullInt32
+		MovieID       sql.NullString
 		MovieTitle    sql.NullString
 		MovieIMDBLink sql.NullString
 		StartTime     sql.NullTime
@@ -168,7 +168,7 @@ func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to 
 			show.TheaterID = int(s.TheaterID.Int32)
 			show.HallID = int(s.HallID.Int32)
 			show.HallCode = s.HallCode.String
-			show.MovieID = int(s.MovieID.Int32)
+			show.MovieID = s.MovieID.String
 			show.MovieTitle = s.MovieTitle.String
 			show.MovieIMDBLink = s.MovieIMDBLink.String
 			show.StartTime = s.StartTime.Time
@@ -221,7 +221,7 @@ func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) 
 		TheaterID     sql.NullInt32
 		HallID        sql.NullInt32
 		HallCode      sql.NullString
-		MovieID       sql.NullInt32
+		MovieID       sql.NullString
 		MovieTitle    sql.NullString
 		MovieIMDBLink sql.NullString
 		StartTime     sql.NullTime
@@ -266,7 +266,7 @@ func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) 
 			show.TheaterID = int(s.TheaterID.Int32)
 			show.HallID = int(s.HallID.Int32)
 			show.HallCode = s.HallCode.String
-			show.MovieID = int(s.MovieID.Int32)
+			show.MovieID = s.MovieID.String
 			show.MovieTitle = s.MovieTitle.String
 			show.MovieIMDBLink = s.MovieIMDBLink.String
 			show.StartTime = s.StartTime.Time

@@ -17,7 +17,7 @@ type Show struct {
 	TheaterID     int       `json:"theater_id,omitempty"`
 	HallID        int       `json:"hall_id"`
 	HallCode      string    `json:"hall_code,omitempty"`
-	MovieID       int       `json:"movie_id"`
+	MovieID       string    `json:"movie_id"`
 	MovieTitle    string    `json:"movie_title,omitempty"`
 	MovieIMDBLink string    `json:"movie_imdb_link,omitempty"`
 	StartTime     time.Time `json:"start_time"`

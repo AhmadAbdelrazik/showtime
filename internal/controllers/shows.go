@@ -201,7 +201,7 @@ type SearchShowsResponse struct {
 }
 
 type CreateShowInput struct {
-	MovieID   int
+	MovieID   string
 	HallCode  string
 	StartTime time.Time
 	EndTime   time.Time
