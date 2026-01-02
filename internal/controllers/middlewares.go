@@ -5,10 +5,13 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/httputil"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/time/rate"
 )
 
 // AuthMiddleware Authenticate the user and add User struct to the request's context
@@ -61,6 +64,57 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 
 		slog.Debug("adding user model in the request key-value store")
 		c.Set("user", user)
+
+		c.Next()
+	}
+}
+
+// RateLimit limits the number of requests for each user
+func RateLimit(limitRate float64, burst int, cleanupDuration time.Duration) gin.HandlerFunc {
+	type Limiter struct {
+		limit       *rate.Limiter
+		lastRequest time.Time
+	}
+
+	freq := struct {
+		m map[string]*Limiter
+		sync.RWMutex
+	}{
+		m: make(map[string]*Limiter),
+	}
+
+	// cleanup
+	go func() {
+		freq.RWMutex.Lock()
+		for ip, limiter := range freq.m {
+			if time.Since(limiter.lastRequest) > cleanupDuration {
+				delete(freq.m, ip)
+			}
+		}
+		freq.RWMutex.Unlock()
+	}()
+
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+
+		freq.RWMutex.RLock()
+		_, ok := freq.m[ip]
+		freq.RWMutex.RUnlock()
+
+		freq.RWMutex.Lock()
+		if !ok {
+			freq.m[ip] = &Limiter{
+				limit:       rate.NewLimiter(rate.Limit(limitRate), burst),
+				lastRequest: time.Now(),
+			}
+		} else {
+			if !freq.m[ip].limit.Allow() {
+				httputil.NewError(c, http.StatusTooManyRequests, errors.New("Too many requests"))
+				c.Abort()
+			}
+			freq.m[ip].lastRequest = time.Now()
+		}
+		freq.RWMutex.Unlock()
 
 		c.Next()
 	}
