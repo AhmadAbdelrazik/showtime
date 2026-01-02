@@ -69,8 +69,8 @@ func (h *Application) AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// RateLimit limits the number of requests for each user
-func RateLimit(limitRate float64, burst int, cleanupDuration time.Duration) gin.HandlerFunc {
+// RateLimitMiddleware limits the number of requests for each user
+func RateLimitMiddleware(limitRate float64, burst int, cleanupDuration time.Duration) gin.HandlerFunc {
 	type Limiter struct {
 		limit       *rate.Limiter
 		lastRequest time.Time

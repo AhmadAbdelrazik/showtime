@@ -5,16 +5,18 @@ import (
 	"log"
 	"log/slog"
 	"os"
-
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"strconv"
+	"time"
 
 	"github.com/AhmadAbdelrazik/showtime/internal/controllers"
 	"github.com/AhmadAbdelrazik/showtime/internal/infrastructure/omdb"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 	"github.com/AhmadAbdelrazik/showtime/internal/services"
+	"github.com/AhmadAbdelrazik/showtime/pkg/cache"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "github.com/AhmadAbdelrazik/showtime/cmd/api/docs"
 )
@@ -34,6 +36,10 @@ import (
 // @host		localhost:8080
 // @BasePath	/api/v1
 func main() {
+	// 3. Initialize Services Dependencies
+	// 4. Initialize HTTP Server Dependencies
+
+	// 1. Load configurations
 	_, err := os.Stat(".env")
 	if err == nil {
 		// load .env
@@ -43,12 +49,35 @@ func main() {
 		}
 	}
 
+	// 2. Initialize Loggers.
 	setupLogger()
-	dsn := getDSN()
-	app, err := setupApplication(dsn, os.Getenv("OMDB_APIKEY"))
+
+	// 3. Initialize Services Dependencies
+	models, err := models.New(getDSN())
 	if err != nil {
-		log.Fatal("Error Loading Controller" + err.Error())
+		slog.Error("failed to create model", slog.String("error", err.Error()))
+		os.Exit(1)
 	}
+
+	omdbClient := omdb.NewClient(os.Getenv("OMDB_APIKEY"))
+
+	cache := cache.New()
+	service := services.New(models, omdbClient)
+
+	rlRate, _ := strconv.Atoi(os.Getenv("RATELIMIT_RATE"))
+	rlBurst, _ := strconv.Atoi(os.Getenv("RATELIMIT_BURST"))
+	rlCleanupDuration, _ := strconv.Atoi(os.Getenv("RATELIMIT_CLEANUP_DURATION"))
+
+	cfg := &controllers.Config{
+		RateLimit: controllers.RateLimit{
+			Rate:            float64(rlRate),
+			Burst:           rlBurst,
+			CleanupDuration: time.Duration(rlCleanupDuration) * time.Minute,
+			Enabled:         false,
+		},
+	}
+
+	app := controllers.New(service, cache, cfg)
 
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
@@ -91,17 +120,4 @@ func setupLogger() {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, loggerOpts))
 	slog.SetDefault(logger)
-}
-
-func setupApplication(dsn, omdbApiKey string) (*controllers.Application, error) {
-	models, err := models.New(dsn)
-	if err != nil {
-		slog.Error("failed to create model", slog.String("error", err.Error()))
-		return nil, err
-	}
-
-	omdbClient := omdb.NewClient(omdbApiKey)
-	service := services.New(models, omdbClient)
-
-	return controllers.New(service)
 }
