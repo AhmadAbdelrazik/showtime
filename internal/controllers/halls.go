@@ -85,14 +85,25 @@ func (h *Application) createHallHandler(c *gin.Context) {
 		return
 	}
 
-	hall := &models.Hall{
-		TheaterID: int(theaterId),
-		Name:      input.Name,
-		Code:      input.Code,
+	createInput := services.CreateHallInput{
+		User: user,
+		Hall: struct {
+			Name        string
+			Code        string
+			Rows        int
+			SeatsPerRow int
+		}{
+			Name:        input.Name,
+			Code:        input.Code,
+			Rows:        input.Rows,
+			SeatsPerRow: input.SeatsPerRow,
+		},
+		TheaterID: theaterId,
 	}
 
 	// fetch theater from db
-	if err := h.services.Halls.Create(user, hall, int(theaterId)); err != nil {
+	hall, err := h.services.Halls.Create(createInput)
+	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrUnauthorized):
 			httputil.NewError(c, http.StatusForbidden, err)
@@ -149,8 +160,15 @@ func (h *Application) updateHallHandler(c *gin.Context) {
 		return
 	}
 
+	serviceInput := services.UpdateHallInput{
+		User:      user,
+		TheaterId: theaterId,
+		HallCode:  hallCode,
+		Name:      input.Name,
+	}
+
 	// add hall
-	hall, err := h.services.Halls.Update(user, int(theaterId), hallCode, services.UpdateHallInput(input))
+	hall, err := h.services.Halls.Update(serviceInput)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrHallNotFound):
@@ -214,8 +232,10 @@ type GetHallResponse struct {
 }
 
 type CreateHallInput struct {
-	Name string `json:"name"`
-	Code string `json:"code"`
+	Name        string `json:"name"`
+	Code        string `json:"code"`
+	Rows        int    `json:"rows"`
+	SeatsPerRow int    `json:"seats_per_row"`
 }
 
 func (i *CreateHallInput) Validate(v *validator.Validator) {

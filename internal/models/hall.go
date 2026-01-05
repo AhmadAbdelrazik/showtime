@@ -18,6 +18,7 @@ type Hall struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Schedule  *Schedule `json:"schedule"`
+	Seats     *Seating  `json:"seating"`
 }
 
 type HallModel struct {
@@ -91,12 +92,12 @@ func (m *HallModel) FindByCode(theaterID int, code string) (*Hall, error) {
 func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to time.Time) (*Hall, error) {
 	query := `SELECT h.theater_id, h.name, h.id, h.manager_id,
 	h.created_at, h.updated_at, s.id, h.theater_id, h.id,
-	h.code, m.id, m.title, m.imdb_link, s.start_time,
+	h.code, m.imdb_id, m.title, m.imdb_link, s.start_time,
 	s.end_time, s.created_at, s.updated_at
 	FROM halls AS h
 	JOIN shows AS s on s.hall_id = h.id
 	JOIN theaters AS t on h.theater_id = t.id
-	JOIN movies AS m on s.movie_id = m.id
+	JOIN movies AS m on s.movie_id = m.imdb_id
 	WHERE h.theater_id = $1 AND h.code = $2 AND s.end_time >= $3
 	AND s.start_time <= $4 AND h.deleted_at IS NULL AND t.deleted_at IS NULL`
 
@@ -191,12 +192,12 @@ func (m *HallModel) FindByCodeWithSchedule(theaterID int, code string, from, to 
 func (m *HallModel) FindWithSchedule(id int, from, to time.Time) (*Hall, error) {
 	query := `SELECT h.theater_id, h.name, h.code, h.manager_id,
 	h.created_at, h.updated_at, s.id, h.theater_id, h.id,
-	h.code, m.id, m.title, m.imdb_link, s.start_time,
+	h.code, m.imdb_id, m.title, m.imdb_link, s.start_time,
 	s.end_time, s.created_at, s.updated_at
 	FROM halls AS h
 	JOIN theaters AS t on t.id = h.theater_id
 	JOIN shows AS s on s.hall_id = h.id
-	JOIN movies AS m on s.movie_id = m.id
+	JOIN movies AS m on s.movie_id = m.imdb_id
 	WHERE h.id = $1 AND s.end_time >= $2 AND s.start_time <= $3 
 	AND h.deleted_at IS NULL AND t.deleted_at IS NULL`
 
