@@ -36,9 +36,6 @@ import (
 // @host		localhost:8080
 // @BasePath	/api/v1
 func main() {
-	// 3. Initialize Services Dependencies
-	// 4. Initialize HTTP Server Dependencies
-
 	// 1. Load configurations
 	_, err := os.Stat(".env")
 	if err == nil {
@@ -64,6 +61,7 @@ func main() {
 	cache := cache.New()
 	service := services.New(models, omdbClient)
 
+	// 4. Initialize HTTP Server Dependencies
 	rlRate, _ := strconv.Atoi(os.Getenv("RATELIMIT_RATE"))
 	rlBurst, _ := strconv.Atoi(os.Getenv("RATELIMIT_BURST"))
 	rlCleanupDuration, _ := strconv.Atoi(os.Getenv("RATELIMIT_CLEANUP_DURATION"))

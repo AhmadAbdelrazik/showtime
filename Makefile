@@ -8,7 +8,6 @@ db-down:
 
 db-migration:
 	@migrate create -ext=sql -dir=./migrations $(name)
-	@migrate create -ext=sql -dir=./migrations/testing $(name)
 
 app-test:
 	@migrate -path=./migrations -database=$(DB_DSN_TEST) up
