@@ -1,20 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
-	"strconv"
-	"time"
 
+	"github.com/AhmadAbdelrazik/showtime/internal/config"
 	"github.com/AhmadAbdelrazik/showtime/internal/controllers"
 	"github.com/AhmadAbdelrazik/showtime/internal/infrastructure/omdb"
 	"github.com/AhmadAbdelrazik/showtime/internal/models"
 	"github.com/AhmadAbdelrazik/showtime/internal/services"
 	"github.com/AhmadAbdelrazik/showtime/pkg/cache"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
@@ -37,44 +34,27 @@ import (
 // @BasePath	/api/v1
 func main() {
 	// 1. Load configurations
-	_, err := os.Stat(".env")
-	if err == nil {
-		// load .env
-		if err := godotenv.Load(); err != nil {
-			log.Fatal("failed to load .env file")
-			os.Exit(1)
-		}
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	// 2. Initialize Loggers.
-	setupLogger()
+	setupLogger(cfg.Environment)
 
 	// 3. Initialize Services Dependencies
-	models, err := models.New(getDSN())
+	models, err := models.New(cfg.DSN)
 	if err != nil {
 		slog.Error("failed to create model", slog.String("error", err.Error()))
 		os.Exit(1)
 	}
 
-	omdbClient := omdb.NewClient(os.Getenv("OMDB_APIKEY"))
+	omdbClient := omdb.NewClient(cfg.OmdbApiKey)
 
 	cache := cache.New()
 	service := services.New(models, omdbClient)
 
 	// 4. Initialize HTTP Server Dependencies
-	rlRate, _ := strconv.Atoi(os.Getenv("RATELIMIT_RATE"))
-	rlBurst, _ := strconv.Atoi(os.Getenv("RATELIMIT_BURST"))
-	rlCleanupDuration, _ := strconv.Atoi(os.Getenv("RATELIMIT_CLEANUP_DURATION"))
-
-	cfg := &controllers.Config{
-		RateLimit: controllers.RateLimit{
-			Rate:            float64(rlRate),
-			Burst:           rlBurst,
-			CleanupDuration: time.Duration(rlCleanupDuration) * time.Minute,
-			Enabled:         false,
-		},
-	}
-
 	app := controllers.New(service, cache, cfg)
 
 	r := gin.Default()
@@ -90,27 +70,10 @@ func main() {
 
 }
 
-func getDSN() string {
-	var dsn string
-
-	if os.Getenv("DB_DSN") != "" {
-		dsn = os.Getenv("DB_DSN")
-	} else {
-		dsn = fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
-			os.Getenv("DB_USER"),
-			os.Getenv("DB_PASSWORD"),
-			os.Getenv("DB_HOST"),
-			os.Getenv("DB_PORT"),
-			os.Getenv("DB_DATABASE"),
-		)
-	}
-	return dsn
-}
-
-func setupLogger() {
+func setupLogger(env string) {
 	// setup structured logging (slog)
 	loggerOpts := &slog.HandlerOptions{}
-	if os.Getenv("ENVIRONMENT") == "DEVELOPMENT" || os.Getenv("ENVIRONMENT") == "TESTING" {
+	if env == "DEVELOPMENT" || env == "TESTING" {
 		loggerOpts.Level = slog.LevelDebug
 	} else {
 		loggerOpts.Level = slog.LevelInfo

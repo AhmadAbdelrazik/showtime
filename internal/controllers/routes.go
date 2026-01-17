@@ -1,10 +1,16 @@
 package controllers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 func (a *Application) Routes(r *gin.Engine) {
 	if a.cfg.RateLimit.Enabled {
-		r.Use(RateLimitMiddleware(a.cfg.RateLimit.Rate, a.cfg.RateLimit.Burst, a.cfg.RateLimit.CleanupDuration))
+		r.Use(RateLimitMiddleware(
+			a.cfg.RateLimit.Rate,
+			a.cfg.RateLimit.Burst,
+			a.cfg.RateLimit.CleanupDuration,
+		))
 	}
 
 	api := r.Group("/api")
