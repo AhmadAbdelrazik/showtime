@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS seats (
   id SERIAL PRIMARY KEY,
   row VARCHAR(2) NOT NULL,
@@ -11,3 +13,9 @@ CREATE TABLE IF NOT EXISTS seats (
 );
 
 CREATE INDEX seats_hall_id_version_idx ON seats (hall_id, version);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS seats;
+-- +goose StatementEnd

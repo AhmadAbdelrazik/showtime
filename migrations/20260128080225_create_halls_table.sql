@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS halls(
   id SERIAL PRIMARY KEY,
   theater_id INT NOT NULL REFERENCES theaters(id) ON DELETE CASCADE,
@@ -11,3 +13,9 @@ CREATE TABLE IF NOT EXISTS halls(
 
   UNIQUE (theater_id, code)
 );
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS halls;
+-- +goose StatementEnd

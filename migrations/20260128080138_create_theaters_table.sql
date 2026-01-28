@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS theaters(
   id SERIAL PRIMARY KEY,
   manager_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -8,3 +10,9 @@ CREATE TABLE IF NOT EXISTS theaters(
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   deleted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL
 );
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE IF EXISTS theaters;
+-- +goose StatementEnd
